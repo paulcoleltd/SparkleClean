@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description" content="Contact SparkleClean for inquiries, quotes, or to schedule your cleaning service.">
+    <title>Contact Us - SparkleClean</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVJkEZSMUkrQ6usznXo+7RzVwwurYfSZlsAYVQoEanJH366jsTtTiDF2c7yJJrb3VbPJsQccQHA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-brand">
+                <a href="index.html" class="logo">
+                    <i class="fas fa-sparkles"></i> SparkleClean
+                </a>
+            </div>
+            <ul class="navbar-menu" id="navbarMenu">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="services.html" class="nav-link">Services</a></li>
+                <li><a href="about.html" class="nav-link">About</a></li>
+                <li><a href="contact.html" class="nav-link active">Contact</a></li>
+                <li><a href="booking.html" class="nav-link btn-primary">Book Now</a></li>
+            </ul>
+            <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="container">
+            <h1>Contact Us</h1>
+            <p>We'd love to hear from you. Get in touch with us today!</p>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="contact-section">
+        <div class="container">
+            <div class="contact-wrapper">
+                <!-- Contact Information -->
+                <div class="contact-info">
+                    <h2>Get In Touch</h2>
+                    <div class="info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            <h3>Address</h3>
+                            <p>123 Clean Street<br>Sparkle City, SC 12345</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-phone"></i>
+                        <div>
+                            <h3>Phone</h3>
+                            <p><a href="tel:+1234567890">(123) 456-7890</a></p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-envelope"></i>
+                        <div>
+                            <h3>Email</h3>
+                            <p><a href="mailto:info@sparkleclean.com">info@sparkleclean.com</a></p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <h3>Business Hours</h3>
+                            <p>Monday - Friday: 8:00 AM - 6:00 PM<br>Saturday: 9:00 AM - 4:00 PM<br>Sunday: Closed</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Form -->
+                <div class="contact-form-wrapper">
+                    <h2>Send us a Message</h2>
+                    <form id="contactForm" class="contact-form" novalidate>
+                        <div class="form-group">
+                            <label for="contactName">Full Name *</label>
+                            <input type="text" id="contactName" name="name" required maxlength="100" placeholder="Your full name">
+                            <span class="error-message" id="contactNameError"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="contactEmail">Email Address *</label>
+                            <input type="email" id="contactEmail" name="email" required maxlength="100" placeholder="your@email.com">
+                            <span class="error-message" id="contactEmailError"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="contactPhone">Phone Number</label>
+                            <input type="tel" id="contactPhone" name="phone" maxlength="20" placeholder="(123) 456-7890">
+                            <span class="error-message" id="contactPhoneError"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="contactSubject">Subject *</label>
+                            <input type="text" id="contactSubject" name="subject" required maxlength="200" placeholder="How can we help?">
+                            <span class="error-message" id="contactSubjectError"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="contactMessage">Message *</label>
+                            <textarea id="contactMessage" name="message" required maxlength="1000" rows="6" placeholder="Please tell us more about your inquiry..."></textarea>
+                            <span class="error-message" id="contactMessageError"></span>
+                        </div>
+
+                        <div class="form-group checkbox">
+                            <input type="checkbox" id="contactPrivacy" name="privacy" required>
+                            <label for="contactPrivacy">I agree to the privacy policy and terms of service</label>
+                            <span class="error-message" id="contactPrivacyError"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg">Send Message</button>
+                        <div class="form-message" id="formMessage"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section">
+        <div class="container">
+            <h2>Frequently Asked Questions</h2>
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <h3>How quickly can you schedule a cleaning?</h3>
+                    <p>We typically can schedule cleanings within 48 hours. For urgent requests, please call us directly at (123) 456-7890.</p>
+                </div>
+                <div class="faq-item">
+                    <h3>Do you offer free quotes?</h3>
+                    <p>Yes! We provide free, no-obligation quotes. Simply fill out our contact form or call us for a personalized estimate.</p>
+                </div>
+                <div class="faq-item">
+                    <h3>What if I'm not satisfied with the cleaning?</h3>
+                    <p>We guarantee 100% satisfaction. If you're not happy, we'll re-clean the area at no additional charge.</p>
+                </div>
+                <div class="faq-item">
+                    <h3>Are your cleaners insured?</h3>
+                    <p>Yes, all our team members are fully insured and bonded for your peace of mind.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="container">
+            <h2>Ready to Book Your Cleaning?</h2>
+            <p>Don't wait! Schedule your appointment today.</p>
+            <a href="booking.html" class="btn btn-lg btn-light">Book Now</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>SparkleClean</h4>
+                    <p>Professional cleaning services for a cleaner, healthier home.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="services.html">Services</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <p>Email: <a href="mailto:info@sparkleclean.com">info@sparkleclean.com</a></p>
+                    <p>Phone: <a href="tel:+1234567890">(123) 456-7890</a></p>
+                </div>
+                <div class="footer-section">
+                    <h4>Follow Us</h4>
+                    <div class="social-links">
+                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 SparkleClean. All rights reserved. | <a href="#privacy">Privacy Policy</a> | <a href="#terms">Terms of Service</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

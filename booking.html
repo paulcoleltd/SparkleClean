@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description" content="Book your cleaning appointment with SparkleClean. Easy online booking with flexible scheduling.">
+    <title>Book a Cleaning - SparkleClean</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVJkEZSMUkrQ6usznXo+7RzVwwurYfSZlsAYVQoEanJH366jsTtTiDF2c7yJJrb3VbPJsQccQHA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-brand">
+                <a href="index.html" class="logo">
+                    <i class="fas fa-sparkles"></i> SparkleClean
+                </a>
+            </div>
+            <ul class="navbar-menu" id="navbarMenu">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="services.html" class="nav-link">Services</a></li>
+                <li><a href="about.html" class="nav-link">About</a></li>
+                <li><a href="contact.html" class="nav-link">Contact</a></li>
+                <li><a href="booking.html" class="nav-link active btn-primary">Book Now</a></li>
+            </ul>
+            <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="container">
+            <h1>Book Your Cleaning</h1>
+            <p>Schedule your appointment in just a few minutes</p>
+        </div>
+    </section>
+
+    <!-- Booking Section -->
+    <section class="booking-section">
+        <div class="container">
+            <div class="booking-wrapper">
+                <div class="booking-form-container">
+                    <h2>Booking Form</h2>
+                    <form id="bookingForm" class="booking-form" novalidate>
+                        <!-- Personal Information -->
+                        <fieldset>
+                            <legend>Personal Information</legend>
+                            
+                            <div class="form-group">
+                                <label for="bookingName">Full Name *</label>
+                                <input type="text" id="bookingName" name="name" required maxlength="100" placeholder="Your full name">
+                                <span class="error-message" id="bookingNameError"></span>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="bookingEmail">Email Address *</label>
+                                    <input type="email" id="bookingEmail" name="email" required maxlength="100" placeholder="your@email.com">
+                                    <span class="error-message" id="bookingEmailError"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="bookingPhone">Phone Number *</label>
+                                    <input type="tel" id="bookingPhone" name="phone" required maxlength="20" placeholder="(123) 456-7890">
+                                    <span class="error-message" id="bookingPhoneError"></span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="bookingAddress">Address *</label>
+                                <input type="text" id="bookingAddress" name="address" required maxlength="200" placeholder="Street address">
+                                <span class="error-message" id="bookingAddressError"></span>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="bookingCity">City *</label>
+                                    <input type="text" id="bookingCity" name="city" required maxlength="100" placeholder="City">
+                                    <span class="error-message" id="bookingCityError"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="bookingState">State *</label>
+                                    <input type="text" id="bookingState" name="state" required maxlength="2" placeholder="State">
+                                    <span class="error-message" id="bookingStateError"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="bookingZip">ZIP Code *</label>
+                                    <input type="text" id="bookingZip" name="zip" required maxlength="10" placeholder="12345">
+                                    <span class="error-message" id="bookingZipError"></span>
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <!-- Service Selection -->
+                        <fieldset>
+                            <legend>Service Selection</legend>
+                            
+                            <div class="form-group">
+                                <label for="bookingService">Service Type *</label>
+                                <select id="bookingService" name="service" required>
+                                    <option value="">-- Select a Service --</option>
+                                    <option value="residential">Residential Cleaning</option>
+                                    <option value="commercial">Commercial Cleaning</option>
+                                    <option value="deep">Deep Cleaning</option>
+                                    <option value="specialized">Specialized Cleaning</option>
+                                </select>
+                                <span class="error-message" id="bookingServiceError"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="bookingFrequency">Frequency *</label>
+                                <select id="bookingFrequency" name="frequency" required>
+                                    <option value="">-- Select Frequency --</option>
+                                    <option value="one-time">One-Time Cleaning</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="biweekly">Bi-Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                                <span class="error-message" id="bookingFrequencyError"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="bookingPropertySize">Property Size *</label>
+                                <select id="bookingPropertySize" name="propertySize" required>
+                                    <option value="">-- Select Size --</option>
+                                    <option value="small">Small (1-2 rooms)</option>
+                                    <option value="medium">Medium (3-4 rooms)</option>
+                                    <option value="large">Large (5+ rooms)</option>
+                                </select>
+                                <span class="error-message" id="bookingPropertySizeError"></span>
+                            </div>
+                        </fieldset>
+
+                        <!-- Scheduling -->
+                        <fieldset>
+                            <legend>Scheduling</legend>
+                            
+                            <div class="form-group">
+                                <label for="bookingDate">Preferred Date *</label>
+                                <input type="date" id="bookingDate" name="date" required>
+                                <span class="error-message" id="bookingDateError"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="bookingTime">Preferred Time *</label>
+                                <select id="bookingTime" name="time" required>
+                                    <option value="">-- Select Time --</option>
+                                    <option value="morning">Morning (8:00 AM - 12:00 PM)</option>
+                                    <option value="afternoon">Afternoon (12:00 PM - 4:00 PM)</option>
+                                    <option value="evening">Evening (4:00 PM - 6:00 PM)</option>
+                                </select>
+                                <span class="error-message" id="bookingTimeError"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="bookingNotes">Special Requests or Notes</label>
+                                <textarea id="bookingNotes" name="notes" maxlength="500" rows="4" placeholder="Any special instructions or areas of focus?"></textarea>
+                                <span class="error-message" id="bookingNotesError"></span>
+                            </div>
+                        </fieldset>
+
+                        <!-- Additional Options -->
+                        <fieldset>
+                            <legend>Additional Options</legend>
+                            
+                            <div class="form-group checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="extras" value="windows">
+                                    <span>Window Cleaning (+$50)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="extras" value="carpets">
+                                    <span>Carpet Shampooing (+$75)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="extras" value="laundry">
+                                    <span>Laundry Service (+$40)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="extras" value="organization">
+                                    <span>Organization Assistance (+$60)</span>
+                                </label>
+                            </div>
+                        </fieldset>
+
+                        <!-- Terms and Conditions -->
+                        <fieldset>
+                            <legend>Terms and Conditions</legend>
+                            
+                            <div class="form-group checkbox">
+                                <input type="checkbox" id="bookingTerms" name="terms" required>
+                                <label for="bookingTerms">I agree to the terms and conditions *</label>
+                                <span class="error-message" id="bookingTermsError"></span>
+                            </div>
+
+                            <div class="form-group checkbox">
+                                <input type="checkbox" id="bookingMarketing" name="marketing">
+                                <label for="bookingMarketing">I'd like to receive promotional offers and updates</label>
+                            </div>
+                        </fieldset>
+
+                        <button type="submit" class="btn btn-primary btn-lg">Complete Booking</button>
+                        <div class="form-message" id="bookingFormMessage"></div>
+                    </form>
+                </div>
+
+                <!-- Booking Summary -->
+                <div class="booking-summary">
+                    <h3>Booking Summary</h3>
+                    <div class="summary-item">
+                        <span>Service Type:</span>
+                        <strong id="summaryService">Not selected</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Frequency:</span>
+                        <strong id="summaryFrequency">Not selected</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Property Size:</span>
+                        <strong id="summarySize">Not selected</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Date:</span>
+                        <strong id="summaryDate">Not selected</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Time:</span>
+                        <strong id="summaryTime">Not selected</strong>
+                    </div>
+                    <div class="summary-divider"></div>
+                    <div class="summary-item total">
+                        <span>Estimated Cost:</span>
+                        <strong id="summaryTotal">$0</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>SparkleClean</h4>
+                    <p>Professional cleaning services for a cleaner, healthier home.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="services.html">Services</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <p>Email: <a href="mailto:info@sparkleclean.com">info@sparkleclean.com</a></p>
+                    <p>Phone: <a href="tel:+1234567890">(123) 456-7890</a></p>
+                </div>
+                <div class="footer-section">
+                    <h4>Follow Us</h4>
+                    <div class="social-links">
+                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 SparkleClean. All rights reserved. | <a href="#privacy">Privacy Policy</a> | <a href="#terms">Terms of Service</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
