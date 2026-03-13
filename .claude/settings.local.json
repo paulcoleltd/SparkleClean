@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh auth:*)",
+      "Bash(ls -la /c/Users/Dell/CleaningCompanyApp/src/app/admin/bookings/\\\\[id\\\\]/)"
+    ]
+  }
+}

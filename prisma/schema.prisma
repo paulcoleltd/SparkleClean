@@ -1,0 +1,236 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Booking ──────────────────────────────────────────────────────────────────
+
+model Booking {
+  id           String        @id @default(uuid())
+  reference    String        @unique // e.g. "SC-A1B2C3D4" — first 8 chars of uuid
+  // Customer details
+  name         String        @db.VarChar(100)
+  email        String        @db.VarChar(254)
+  phone        String        @db.VarChar(30)
+  address      String        @db.VarChar(300)
+  city         String        @db.VarChar(100)
+  state        String        @db.Char(2)
+  zip          String        @db.VarChar(10)
+  // Service details
+  service      ServiceType
+  frequency    Frequency
+  propertySize PropertySize
+  scheduledAt  DateTime      // combined date + time slot start
+  timeSlot     TimeSlot
+  extras       Extra[]
+  notes        String?       @db.Text
+  adminNotes   String?       @db.Text  // internal staff notes — never shown to customer
+  // Financials — stored in cents, never floats
+  total            Int
+  // Status
+  status           BookingStatus @default(PENDING_PAYMENT)
+  // Stripe — set after Checkout session is created
+  stripeSessionId  String?       @unique
+  // Recurring series — null for one-time bookings
+  recurringScheduleId String?
+  recurringSchedule   RecurringSchedule? @relation(fields: [recurringScheduleId], references: [id])
+  // Staff assignment — null until admin assigns a cleaner
+  cleanerId  String?
+  cleaner    Cleaner? @relation(fields: [cleanerId], references: [id])
+  // Preferences
+  marketing        Boolean       @default(false)
+  // Audit
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  deletedAt      DateTime?     // soft delete
+  reminderSentAt    DateTime?     // set when 24h reminder email is sent
+  reviewToken       String?       @unique  // UUID sent in the review invite email
+  reviewInviteSentAt DateTime?    // set when invite email is sent
+  review            Review?
+
+  @@index([email])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([recurringScheduleId])
+  @@index([cleanerId])
+  @@map("bookings")
+}
+
+// ─── Review ───────────────────────────────────────────────────────────────────
+
+model Review {
+  id        String       @id @default(uuid())
+  bookingId String       @unique
+  booking   Booking      @relation(fields: [bookingId], references: [id])
+  // Reviewer info — denormalized so reviews display without joining Booking
+  name      String       @db.VarChar(100)
+  service   ServiceType
+  // Content
+  rating    Int          // 1–5
+  title     String       @db.VarChar(200)
+  body      String       @db.Text
+  // Moderation
+  status    ReviewStatus @default(PENDING)
+  // Audit
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("reviews")
+}
+
+// ─── Recurring Schedule ───────────────────────────────────────────────────────
+
+model RecurringSchedule {
+  id           String         @id @default(uuid())
+  // Customer info — stored here so occurrences can be generated independently
+  name         String         @db.VarChar(100)
+  email        String         @db.VarChar(254)
+  phone        String         @db.VarChar(30)
+  address      String         @db.VarChar(300)
+  city         String         @db.VarChar(100)
+  state        String         @db.Char(2)
+  zip          String         @db.VarChar(10)
+  // Service config — same for every occurrence
+  service      ServiceType
+  frequency    Frequency
+  propertySize PropertySize
+  timeSlot     TimeSlot
+  extras       Extra[]
+  notes        String?        @db.Text
+  marketing    Boolean        @default(false)
+  // Finance — price per occurrence in cents
+  baseTotal    Int
+  // Status
+  status       ScheduleStatus @default(ACTIVE)
+  bookings     Booking[]
+  // Audit
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@map("recurring_schedules")
+}
+
+// ─── Contact Messages ─────────────────────────────────────────────────────────
+
+model ContactMessage {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(100)
+  email     String   @db.VarChar(254)
+  phone     String?  @db.VarChar(30)
+  subject   String   @db.VarChar(200)
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([read])
+  @@index([createdAt])
+  @@map("contact_messages")
+}
+
+// ─── Customer ─────────────────────────────────────────────────────────────────
+
+model Customer {
+  id           String   @id @default(uuid())
+  email        String   @unique @db.VarChar(254)
+  passwordHash String
+  name         String   @db.VarChar(100)
+  // Password reset — token is a UUID, expires 1 hour after issue
+  passwordResetToken     String?   @unique
+  passwordResetExpiresAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("customers")
+}
+
+// ─── Admin ────────────────────────────────────────────────────────────────────
+
+model Admin {
+  id           String   @id @default(uuid())
+  email        String   @unique @db.VarChar(254)
+  passwordHash String
+  name         String   @db.VarChar(100)
+  createdAt    DateTime @default(now())
+
+  @@map("admins")
+}
+
+// ─── Cleaner (field staff) ─────────────────────────────────────────────────────
+
+model Cleaner {
+  id           String    @id @default(uuid())
+  email        String    @unique @db.VarChar(254)
+  passwordHash String
+  name         String    @db.VarChar(100)
+  phone        String?   @db.VarChar(30)
+  active       Boolean   @default(true)
+  bookings     Booking[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("cleaners")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum ServiceType {
+  RESIDENTIAL
+  COMMERCIAL
+  DEEP
+  SPECIALIZED
+}
+
+enum Frequency {
+  ONE_TIME
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+enum PropertySize {
+  SMALL
+  MEDIUM
+  LARGE
+}
+
+enum TimeSlot {
+  MORNING    // 8am–12pm
+  AFTERNOON  // 12pm–4pm
+  EVENING    // 4pm–6pm
+}
+
+enum Extra {
+  WINDOWS
+  CARPETS
+  LAUNDRY
+  ORGANIZATION
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT  // created, awaiting Stripe payment
+  PENDING          // paid, awaiting confirmation by staff
+  CONFIRMED        // staff confirmed
+  COMPLETED        // job done
+  CANCELLED
+}
+
+enum ScheduleStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+}
+
+enum ReviewStatus {
+  PENDING    // submitted, awaiting admin approval
+  PUBLISHED  // visible on site
+  REJECTED   // hidden
+}
