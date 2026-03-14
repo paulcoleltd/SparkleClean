@@ -49,7 +49,7 @@ export default async function RecurringDetailPage({
           <p className="text-sm text-gray-500 mt-1">
             {FREQUENCY_LABELS[schedule.frequency as string]} ·{' '}
             {SERVICE_LABELS[schedule.service as string]} ·{' '}
-            ${formatPrice(schedule.baseTotal)}/visit
+            £{formatPrice(schedule.baseTotal)}/visit
           </p>
         </div>
         <span className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -70,7 +70,7 @@ export default async function RecurringDetailPage({
               <Def label="Name"    value={schedule.name} />
               <Def label="Email"   value={schedule.email} />
               <Def label="Phone"   value={schedule.phone} />
-              <Def label="Address" value={`${schedule.address}, ${schedule.city}, ${schedule.state} ${schedule.zip}`} />
+              <Def label="Address" value={`${schedule.address}, ${schedule.city}${schedule.county ? `, ${schedule.county}` : ''}, ${schedule.postcode}`} />
             </dl>
           </section>
 
@@ -82,7 +82,7 @@ export default async function RecurringDetailPage({
               <Def label="Size"      value={SIZE_LABELS[schedule.propertySize as string] ?? schedule.propertySize} />
               <Def label="Time Slot" value={TIME_LABELS[schedule.timeSlot as string] ?? schedule.timeSlot} />
               <Def label="Extras"    value={schedule.extras.length ? schedule.extras.map(e => EXTRA_LABELS[e as string] ?? e).join(', ') : 'None'} />
-              <Def label="Per visit" value={`$${formatPrice(schedule.baseTotal)}`} />
+              <Def label="Per visit" value={`£${formatPrice(schedule.baseTotal)}`} />
             </dl>
           </section>
 

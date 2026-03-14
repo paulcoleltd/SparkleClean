@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: 'desc' },
     select: {
       reference: true, name: true, email: true, phone: true,
-      address: true, city: true, state: true, zip: true,
+      address: true, city: true, county: true, postcode: true,
       service: true, frequency: true, propertySize: true,
       timeSlot: true, extras: true, scheduledAt: true,
       total: true, status: true, createdAt: true,
@@ -51,9 +51,9 @@ export async function GET(req: NextRequest) {
 
   const headers = [
     'Reference', 'Name', 'Email', 'Phone',
-    'Address', 'City', 'State', 'ZIP',
+    'Address', 'City', 'County', 'Postcode',
     'Service', 'Frequency', 'Property Size', 'Time Slot',
-    'Add-ons', 'Scheduled At', 'Total (USD)',
+    'Add-ons', 'Scheduled At', 'Total (GBP)',
     'Status', 'Booked At', 'Recurring',
   ]
 
@@ -66,8 +66,8 @@ export async function GET(req: NextRequest) {
       b.phone,
       b.address,
       b.city,
-      b.state,
-      b.zip,
+      b.county ?? '',
+      b.postcode,
       b.service,
       b.frequency,
       b.propertySize,

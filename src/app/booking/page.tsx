@@ -35,8 +35,8 @@ export default async function BookingPage() {
       phone:   lastBooking?.phone,
       address: lastBooking?.address,
       city:    lastBooking?.city,
-      state:   lastBooking?.state,
-      zip:     lastBooking?.zip,
+      county:  lastBooking?.county ?? undefined,
+      postcode: lastBooking?.postcode,
     }
   }
 

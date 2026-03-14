@@ -2,24 +2,24 @@ import { describe, it, expect } from 'vitest'
 import { formatPrice, formatDate, toReference } from '../utils'
 
 describe('formatPrice()', () => {
-  it('formats cents as dollar string with $ prefix', () => {
-    expect(formatPrice(15000)).toBe('$150')
+  it('formats pence as decimal string without currency prefix', () => {
+    expect(formatPrice(15000)).toBe('150')
   })
 
-  it('strips trailing .00 for whole dollar amounts', () => {
-    expect(formatPrice(10000)).toBe('$100')
+  it('strips trailing .00 for whole pound amounts', () => {
+    expect(formatPrice(10000)).toBe('100')
   })
 
-  it('keeps cents when amount is not a whole dollar', () => {
-    expect(formatPrice(9999)).toBe('$99.99')
+  it('keeps pence when amount is not a whole pound', () => {
+    expect(formatPrice(9999)).toBe('99.99')
   })
 
   it('handles zero', () => {
-    expect(formatPrice(0)).toBe('$0')
+    expect(formatPrice(0)).toBe('0')
   })
 
-  it('handles single-digit cents', () => {
-    expect(formatPrice(101)).toBe('$1.01')
+  it('handles single-digit pence', () => {
+    expect(formatPrice(101)).toBe('1.01')
   })
 })
 

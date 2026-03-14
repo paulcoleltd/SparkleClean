@@ -67,8 +67,8 @@ CREATE TABLE "recurring_schedules" (
   "phone"        VARCHAR(30)     NOT NULL,
   "address"      VARCHAR(300)    NOT NULL,
   "city"         VARCHAR(100)    NOT NULL,
-  "state"        CHAR(2)         NOT NULL,
-  "zip"          VARCHAR(10)     NOT NULL,
+  "county"       VARCHAR(100),
+  "postcode"     VARCHAR(10)     NOT NULL,
   "service"      "ServiceType"   NOT NULL,
   "frequency"    "Frequency"     NOT NULL,
   "propertySize" "PropertySize"  NOT NULL,
@@ -95,8 +95,8 @@ CREATE TABLE "bookings" (
   "phone"               VARCHAR(30)     NOT NULL,
   "address"             VARCHAR(300)    NOT NULL,
   "city"                VARCHAR(100)    NOT NULL,
-  "state"               CHAR(2)         NOT NULL,
-  "zip"                 VARCHAR(10)     NOT NULL,
+  "county"              VARCHAR(100),
+  "postcode"            VARCHAR(10)     NOT NULL,
   "service"             "ServiceType"   NOT NULL,
   "frequency"           "Frequency"     NOT NULL,
   "propertySize"        "PropertySize"  NOT NULL,
@@ -244,12 +244,12 @@ INSERT INTO "customers" ("id","email","passwordHash","name","createdAt","updated
 
 -- Recurring schedule (Sarah's weekly residential)
 INSERT INTO "recurring_schedules"
-  ("id","name","email","phone","address","city","state","zip",
+  ("id","name","email","phone","address","city","county","postcode",
    "service","frequency","propertySize","timeSlot","extras","baseTotal","status","createdAt","updatedAt")
 VALUES (
   'rs000001-0000-0000-0000-000000000001',
-  'Sarah Jones','sarah.jones@example.com','(555) 200-0001',
-  '42 Maple Street','Springfield','IL','62701',
+  'Sarah Jones','sarah.jones@example.com','+44 7700 900001',
+  '42 Maple Street','London','Greater London','SW1A 1AA',
   'RESIDENTIAL','WEEKLY','MEDIUM','MORNING',
   ARRAY['WINDOWS']::"Extra"[],
   20000,
@@ -261,14 +261,14 @@ VALUES (
 
 -- 1. COMPLETED — Sarah, residential (has review)
 INSERT INTO "bookings"
-  ("id","reference","name","email","phone","address","city","state","zip",
+  ("id","reference","name","email","phone","address","city","county","postcode",
    "service","frequency","propertySize","scheduledAt","timeSlot","extras","notes",
    "total","status","cleanerId","recurringScheduleId","reviewToken","reviewInviteSentAt","createdAt","updatedAt")
 VALUES (
   'bk000001-0000-0000-0000-000000000001',
   'SC-A1B2C3D4',
-  'Sarah Jones','sarah.jones@example.com','(555) 200-0001',
-  '42 Maple Street','Springfield','IL','62701',
+  'Sarah Jones','sarah.jones@example.com','+44 7700 900001',
+  '42 Maple Street','London','Greater London','SW1A 1AA',
   'RESIDENTIAL','WEEKLY','MEDIUM',
   NOW() - INTERVAL '14 days','MORNING',
   ARRAY['WINDOWS']::"Extra"[],
@@ -283,14 +283,14 @@ VALUES (
 
 -- 2. CONFIRMED — Sarah, upcoming this week (recurring)
 INSERT INTO "bookings"
-  ("id","reference","name","email","phone","address","city","state","zip",
+  ("id","reference","name","email","phone","address","city","county","postcode",
    "service","frequency","propertySize","scheduledAt","timeSlot","extras",
    "total","status","cleanerId","recurringScheduleId","createdAt","updatedAt")
 VALUES (
   'bk000002-0000-0000-0000-000000000002',
   'SC-B2C3D4E5',
-  'Sarah Jones','sarah.jones@example.com','(555) 200-0001',
-  '42 Maple Street','Springfield','IL','62701',
+  'Sarah Jones','sarah.jones@example.com','+44 7700 900001',
+  '42 Maple Street','London','Greater London','SW1A 1AA',
   'RESIDENTIAL','WEEKLY','MEDIUM',
   NOW() + INTERVAL '3 days','MORNING',
   ARRAY['WINDOWS']::"Extra"[],
@@ -302,14 +302,14 @@ VALUES (
 
 -- 3. PENDING — Mike, deep clean, awaiting staff confirmation
 INSERT INTO "bookings"
-  ("id","reference","name","email","phone","address","city","state","zip",
+  ("id","reference","name","email","phone","address","city","county","postcode",
    "service","frequency","propertySize","scheduledAt","timeSlot","extras","notes",
    "total","status","createdAt","updatedAt")
 VALUES (
   'bk000003-0000-0000-0000-000000000003',
   'SC-C3D4E5F6',
-  'Mike Taylor','mike.taylor@example.com','(555) 300-0002',
-  '18 Oak Avenue','Chicago','IL','60601',
+  'Mike Taylor','mike.taylor@example.com','+44 7700 900002',
+  '18 Oak Road','Manchester','Greater Manchester','M1 1AE',
   'DEEP','ONE_TIME','LARGE',
   NOW() + INTERVAL '5 days','AFTERNOON',
   ARRAY['CARPETS','WINDOWS']::"Extra"[],
@@ -320,14 +320,14 @@ VALUES (
 
 -- 4. PENDING — Anonymous, commercial, no cleaner assigned
 INSERT INTO "bookings"
-  ("id","reference","name","email","phone","address","city","state","zip",
+  ("id","reference","name","email","phone","address","city","county","postcode",
    "service","frequency","propertySize","scheduledAt","timeSlot","extras",
    "total","status","createdAt","updatedAt")
 VALUES (
   'bk000004-0000-0000-0000-000000000004',
   'SC-D4E5F6G7',
-  'Acme Corp','office@acmecorp.com','(555) 400-0001',
-  '99 Business Park','Chicago','IL','60602',
+  'Acme Corp','office@acmecorp.com','+44 20 7946 0400',
+  '99 Business Park','Birmingham','West Midlands','B1 1BB',
   'COMMERCIAL','MONTHLY','LARGE',
   NOW() + INTERVAL '10 days','MORNING',
   '{}',
@@ -337,14 +337,14 @@ VALUES (
 
 -- 5. CANCELLED — Mike, one-time residential
 INSERT INTO "bookings"
-  ("id","reference","name","email","phone","address","city","state","zip",
+  ("id","reference","name","email","phone","address","city","county","postcode",
    "service","frequency","propertySize","scheduledAt","timeSlot","extras",
    "total","status","createdAt","updatedAt")
 VALUES (
   'bk000005-0000-0000-0000-000000000005',
   'SC-E5F6G7H8',
-  'Mike Taylor','mike.taylor@example.com','(555) 300-0002',
-  '18 Oak Avenue','Chicago','IL','60601',
+  'Mike Taylor','mike.taylor@example.com','+44 7700 900002',
+  '18 Oak Road','Manchester','Greater Manchester','M1 1AE',
   'RESIDENTIAL','ONE_TIME','SMALL',
   NOW() - INTERVAL '5 days','EVENING',
   '{}',
@@ -354,14 +354,14 @@ VALUES (
 
 -- 6. COMPLETED — Sarah, 4 weeks ago (older history)
 INSERT INTO "bookings"
-  ("id","reference","name","email","phone","address","city","state","zip",
+  ("id","reference","name","email","phone","address","city","county","postcode",
    "service","frequency","propertySize","scheduledAt","timeSlot","extras",
    "total","status","cleanerId","recurringScheduleId","createdAt","updatedAt")
 VALUES (
   'bk000006-0000-0000-0000-000000000006',
   'SC-F6G7H8I9',
-  'Sarah Jones','sarah.jones@example.com','(555) 200-0001',
-  '42 Maple Street','Springfield','IL','62701',
+  'Sarah Jones','sarah.jones@example.com','+44 7700 900001',
+  '42 Maple Street','London','Greater London','SW1A 1AA',
   'RESIDENTIAL','WEEKLY','MEDIUM',
   NOW() - INTERVAL '28 days','MORNING',
   ARRAY['WINDOWS']::"Extra"[],
@@ -373,14 +373,14 @@ VALUES (
 
 -- 7. CONFIRMED — Bob assigned, specialized, next week
 INSERT INTO "bookings"
-  ("id","reference","name","email","phone","address","city","state","zip",
+  ("id","reference","name","email","phone","address","city","county","postcode",
    "service","frequency","propertySize","scheduledAt","timeSlot","extras","notes",
    "total","status","cleanerId","createdAt","updatedAt")
 VALUES (
   'bk000007-0000-0000-0000-000000000007',
   'SC-G7H8I9J0',
-  'Linda Park','linda.park@example.com','(555) 500-0001',
-  '7 Elm Court','Evanston','IL','60201',
+  'Linda Park','linda.park@example.com','+44 7700 900003',
+  '7 Elm Court','Leeds','West Yorkshire','LS1 1BA',
   'SPECIALIZED','ONE_TIME','MEDIUM',
   NOW() + INTERVAL '7 days','AFTERNOON',
   ARRAY['ORGANIZATION','LAUNDRY']::"Extra"[],

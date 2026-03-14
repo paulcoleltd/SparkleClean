@@ -77,7 +77,7 @@ export function PriceSummary({
               total > 0 ? 'text-brand-600' : 'text-gray-400'
             )}
           >
-            {total > 0 ? formatPrice(total) : '$0'}
+            {total > 0 ? `£${formatPrice(total)}` : '£0'}
           </span>
         </div>
         <p className="text-xs text-gray-400">

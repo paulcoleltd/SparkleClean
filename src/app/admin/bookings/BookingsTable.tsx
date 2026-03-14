@@ -154,7 +154,7 @@ export default function BookingsTable({ bookings }: Props) {
                       {SERVICE_LABELS[b.service as keyof typeof SERVICE_LABELS] ?? b.service}
                     </td>
                     <td className="px-4 py-3 text-gray-600">{formatDate(b.scheduledAt)}</td>
-                    <td className="px-4 py-3 text-gray-900 font-medium">${formatPrice(b.total)}</td>
+                    <td className="px-4 py-3 text-gray-900 font-medium">£{formatPrice(b.total)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[b.status]}`}>
                         {STATUS_LABELS[b.status]}

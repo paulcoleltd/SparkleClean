@@ -63,14 +63,14 @@ export default async function BookingReferencePage({
         <Row label="Size"       value={SIZE_LABELS[booking.propertySize as string] ?? booking.propertySize} />
         <Row label="Scheduled"  value={formatDate(booking.scheduledAt)} />
         <Row label="Time Slot"  value={TIME_LABELS[booking.timeSlot as string] ?? booking.timeSlot} />
-        <Row label="Address"    value={`${booking.address}, ${booking.city}, ${booking.state} ${booking.zip}`} />
+        <Row label="Address"    value={`${booking.address}, ${booking.city}${booking.county ? `, ${booking.county}` : ''}, ${booking.postcode}`} />
         {booking.extras.length > 0 && (
           <Row
             label="Add-ons"
             value={booking.extras.map(e => EXTRA_LABELS[e as string] ?? e).join(', ')}
           />
         )}
-        <Row label="Total" value={`$${formatPrice(booking.total)}`} bold />
+        <Row label="Total" value={`£${formatPrice(booking.total)}`} bold />
       </div>
 
       <div className="mt-8 flex flex-col sm:flex-row gap-3">

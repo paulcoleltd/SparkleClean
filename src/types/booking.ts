@@ -20,8 +20,8 @@ export const CreateBookingSchema = z.object({
     .max(30),
   address: z.string().min(5, 'Please enter a valid address').max(300),
   city:    z.string().min(2, 'Please enter a valid city').max(100),
-  state:   z.string().length(2, 'Please enter a 2-letter state code').toUpperCase(),
-  zip:     z.string().regex(/^\d{5}(-\d{4})?$/, 'Please enter a valid ZIP code (e.g. 12345 or 12345-6789)'),
+  county:  z.string().max(100).optional(),
+  postcode: z.string().regex(/^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$/i, 'Please enter a valid UK postcode'),
 
   // Service details
   service:      z.enum(['RESIDENTIAL', 'COMMERCIAL', 'DEEP', 'SPECIALIZED'], {
@@ -58,7 +58,7 @@ export type CreateBookingInput = z.infer<typeof CreateBookingSchema>
 export interface BookingResponse {
   id:          string
   reference:   string
-  total:       number   // cents
+  total:       number   // pence
   status:      'PENDING_PAYMENT' | 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
   checkoutUrl: string   // Stripe Checkout URL — redirect client here immediately
 }

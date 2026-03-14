@@ -87,12 +87,12 @@ export async function POST(req: NextRequest) {
       line_items: [
         {
           price_data: {
-            currency:     'usd',
+            currency:     'gbp',
             product_data: {
               name:        `${parsed.data.service.charAt(0) + parsed.data.service.slice(1).toLowerCase()} Cleaning`,
               description: buildStripeDescription(booking.reference, booking.scheduledAt, parsed.data.frequency),
             },
-            unit_amount: booking.total, // in cents — calculated server-side
+            unit_amount: booking.total, // in pence — calculated server-side
           },
           quantity: 1,
         },

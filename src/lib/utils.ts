@@ -6,9 +6,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-/** Format cents as a currency string — always use this for displaying prices */
-export function formatPrice(cents: number): string {
-  return `$${(cents / 100).toFixed(2).replace(/\.00$/, '')}`
+/** Format pence as a currency string — always use this for displaying prices */
+export function formatPrice(pence: number): string {
+  return `${(pence / 100).toFixed(2).replace(/\.00$/, '')}`
 }
 
 /** Format a date for display */

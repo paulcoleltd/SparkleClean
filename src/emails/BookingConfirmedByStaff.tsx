@@ -60,7 +60,7 @@ export function BookingConfirmedByStaffEmail({ booking }: Props) {
             <Row style={tableRow}>
               <Column style={labelCol}>Address</Column>
               <Column style={valueCol}>
-                {booking.address}, {booking.city}, {booking.state} {booking.zip}
+                {booking.address}, {booking.city}{booking.county ? `, ${booking.county}` : ''}, {booking.postcode}
               </Column>
             </Row>
           </Section>
@@ -91,8 +91,8 @@ export function BookingConfirmedByStaffEmail({ booking }: Props) {
                 info@sparkleclean.com
               </Link>{' '}
               or call{' '}
-              <Link href="tel:+11234567890" style={link}>
-                (123) 456-7890
+              <Link href="tel:+442079460958" style={link}>
+                +44 20 7946 0958
               </Link>{' '}
               at least 24 hours in advance.
             </Text>

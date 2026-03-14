@@ -6,10 +6,10 @@ export const size        = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
 const SERVICES = [
-  { label: 'Residential', price: '$150', icon: '🏠' },
-  { label: 'Commercial',  price: '$200', icon: '🏢' },
-  { label: 'Deep Clean',  price: '$300', icon: '✨' },
-  { label: 'Specialized', price: '$250', icon: '🔧' },
+  { label: 'Residential', price: '£150', icon: '🏠' },
+  { label: 'Commercial',  price: '£200', icon: '🏢' },
+  { label: 'Deep Clean',  price: '£300', icon: '✨' },
+  { label: 'Specialized', price: '£250', icon: '🔧' },
 ]
 
 export default function OgImage() {

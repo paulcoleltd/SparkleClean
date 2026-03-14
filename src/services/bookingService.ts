@@ -7,22 +7,22 @@ import type { ServiceType, Frequency, PropertySize, TimeSlot, Extra, BookingStat
 // ─── Pricing (server-side only — never trust a total from the client) ─────────
 
 const SERVICE_PRICES: Record<string, number> = {
-  RESIDENTIAL: 15000,  // $150.00 in cents
-  COMMERCIAL:  20000,  // $200.00
-  DEEP:        30000,  // $300.00
-  SPECIALIZED: 25000,  // $250.00
+  RESIDENTIAL: 15000,  // £150.00 in pence
+  COMMERCIAL:  20000,  // £200.00
+  DEEP:        30000,  // £300.00
+  SPECIALIZED: 25000,  // £250.00
 }
 
 const EXTRA_PRICES: Record<string, number> = {
-  WINDOWS:      5000,  // $50.00
-  CARPETS:      7500,  // $75.00
-  LAUNDRY:      4000,  // $40.00
-  ORGANIZATION: 6000,  // $60.00
+  WINDOWS:      5000,  // £50.00
+  CARPETS:      7500,  // £75.00
+  LAUNDRY:      4000,  // £40.00
+  ORGANIZATION: 6000,  // £60.00
 }
 
 /**
  * Recurring-frequency discount rates.
- * Applied to the subtotal (base + extras) before rounding to the nearest cent.
+ * Applied to the subtotal (base + extras) before rounding to the nearest penny.
  */
 export const FREQUENCY_DISCOUNTS: Record<string, number> = {
   ONE_TIME:  0,
@@ -32,7 +32,7 @@ export const FREQUENCY_DISCOUNTS: Record<string, number> = {
 }
 
 /**
- * Calculate the final booking total in cents.
+ * Calculate the final booking total in pence.
  *
  * @param service   - ServiceType enum value
  * @param extras    - Array of Extra enum values
@@ -51,7 +51,7 @@ export function calculateTotal(
 }
 
 /**
- * Return the discount amount in cents for a given service + extras + frequency.
+ * Return the discount amount in pence for a given service + extras + frequency.
  * Useful for showing a breakdown in the UI without calling calculateTotal twice.
  */
 export function calculateDiscount(
@@ -103,8 +103,8 @@ export async function createBooking(
       phone:        input.phone,
       address:      input.address,
       city:         input.city,
-      state:        input.state,
-      zip:          input.zip,
+      county:       input.county,
+      postcode:     input.postcode,
       service:      input.service as ServiceType,
       frequency:    input.frequency as Frequency,
       propertySize: input.propertySize as PropertySize,

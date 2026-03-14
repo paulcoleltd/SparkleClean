@@ -57,7 +57,7 @@ export default function BookingReminder({ booking }: Props) {
                 <Column>
                   <Text style={cardLabelStyle}>Address</Text>
                   <Text style={cardValueStyle}>
-                    {booking.address}, {booking.city}, {booking.state}
+                    {booking.address}, {booking.city}{booking.county ? `, ${booking.county}` : ''}, {booking.postcode}
                   </Text>
                 </Column>
               </Row>
@@ -75,7 +75,7 @@ export default function BookingReminder({ booking }: Props) {
 
             <Text style={textStyle}>
               Questions? Reply to this email or call us at{' '}
-              <strong>{process.env.NEXT_PUBLIC_COMPANY_PHONE ?? '(123) 456-7890'}</strong>.
+              <strong>{process.env.NEXT_PUBLIC_COMPANY_PHONE ?? '+44 20 7946 0958'}</strong>.
             </Text>
 
             <Text style={totalStyle}>

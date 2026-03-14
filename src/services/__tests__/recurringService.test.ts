@@ -211,7 +211,7 @@ describe('createRecurringSchedule()', () => {
 
     const input = {
       name: 'Jane Smith', email: 'jane@example.com', phone: '(555) 123-4567',
-      address: '123 Main St', city: 'Springfield', state: 'IL', zip: '62701',
+      address: '123 High Street', city: 'London', county: 'Greater London', postcode: 'SW1A 1AA',
       service: 'RESIDENTIAL' as const, frequency: 'WEEKLY' as const,
       propertySize: 'MEDIUM' as const, timeSlot: 'MORNING' as const,
       extras: [], marketing: false, date: '2026-04-01',

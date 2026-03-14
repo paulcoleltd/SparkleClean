@@ -16,8 +16,8 @@ export interface BookingFormPrefill {
   phone?:   string
   address?: string
   city?:    string
-  state?:   string
-  zip?:     string
+  county?:  string
+  postcode?: string
 }
 
 export function BookingForm({ prefill }: { prefill?: BookingFormPrefill }) {
@@ -69,7 +69,7 @@ export function BookingForm({ prefill }: { prefill?: BookingFormPrefill }) {
               <input {...register('email')} type="email" placeholder="you@example.com" className={input(!!errors.email)} />
             </Field>
             <Field label="Phone Number" error={errors.phone?.message} required>
-              <input {...register('phone')} type="tel" placeholder="(123) 456-7890" className={input(!!errors.phone)} />
+              <input {...register('phone')} type="tel" placeholder="+44 7700 900000" className={input(!!errors.phone)} />
             </Field>
           </div>
 
@@ -80,14 +80,14 @@ export function BookingForm({ prefill }: { prefill?: BookingFormPrefill }) {
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div className="sm:col-span-2">
               <Field label="City" error={errors.city?.message} required>
-                <input {...register('city')} placeholder="City" className={input(!!errors.city)} />
+                <input {...register('city')} placeholder="London" className={input(!!errors.city)} />
               </Field>
             </div>
-            <Field label="State" error={errors.state?.message} required>
-              <input {...register('state')} placeholder="IL" maxLength={2} className={input(!!errors.state)} />
+            <Field label="County" error={errors.county?.message}>
+              <input {...register('county')} placeholder="Greater London" className={input(!!errors.county)} />
             </Field>
-            <Field label="ZIP Code" error={errors.zip?.message} required>
-              <input {...register('zip')} placeholder="62701" className={input(!!errors.zip)} />
+            <Field label="Postcode" error={errors.postcode?.message} required>
+              <input {...register('postcode')} placeholder="SW1A 1AA" className={input(!!errors.postcode)} />
             </Field>
           </div>
         </fieldset>
@@ -100,10 +100,10 @@ export function BookingForm({ prefill }: { prefill?: BookingFormPrefill }) {
             <Field label="Service Type" error={errors.service?.message} required>
               <select {...register('service')} className={input(!!errors.service)}>
                 <option value="">Select a service</option>
-                <option value="RESIDENTIAL">Residential Cleaning — $150</option>
-                <option value="COMMERCIAL">Commercial Cleaning — $200</option>
-                <option value="DEEP">Deep Cleaning — $300</option>
-                <option value="SPECIALIZED">Specialized Cleaning — $250</option>
+                <option value="RESIDENTIAL">Residential Cleaning — £150</option>
+                <option value="COMMERCIAL">Commercial Cleaning — £200</option>
+                <option value="DEEP">Deep Cleaning — £300</option>
+                <option value="SPECIALIZED">Specialized Cleaning — £250</option>
               </select>
             </Field>
 
@@ -158,10 +158,10 @@ export function BookingForm({ prefill }: { prefill?: BookingFormPrefill }) {
           <legend className="text-base font-semibold text-gray-800">Optional Add-ons</legend>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {([
-              ['WINDOWS',      'Window cleaning',  '+$50'],
-              ['CARPETS',      'Carpet cleaning',  '+$75'],
-              ['LAUNDRY',      'Laundry',          '+$40'],
-              ['ORGANIZATION', 'Organisation',     '+$60'],
+              ['WINDOWS',      'Window cleaning',  '+£50'],
+              ['CARPETS',      'Carpet cleaning',  '+£75'],
+              ['LAUNDRY',      'Laundry',          '+£40'],
+              ['ORGANIZATION', 'Organisation',     '+£60'],
             ] as const).map(([value, label, price]) => (
               <label key={value} className="flex cursor-pointer items-center gap-3 rounded-md border border-gray-200 p-3 hover:border-brand-300 hover:bg-brand-50">
                 <input type="checkbox" value={value} {...register('extras')} className="h-4 w-4 accent-brand-500" />

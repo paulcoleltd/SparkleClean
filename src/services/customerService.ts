@@ -21,7 +21,7 @@ export async function getBookingsByEmail(email: string) {
     select: {
       id: true, reference: true, service: true, scheduledAt: true,
       timeSlot: true, status: true, total: true, extras: true,
-      address: true, city: true, state: true, zip: true, phone: true,
+      address: true, city: true, county: true, postcode: true, phone: true,
       recurringScheduleId: true,
     },
   })

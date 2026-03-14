@@ -107,14 +107,14 @@ export default async function CustomerBookingDetailPage({
           <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Address</h2>
           <p className="text-sm text-gray-900">
             {booking.address}<br />
-            {booking.city}, {booking.state} {booking.zip}
+            {booking.city}{booking.county ? `, ${booking.county}` : ''}, {booking.postcode}
           </p>
         </div>
 
         {/* Total */}
         <div className="bg-white rounded-xl border border-gray-200 p-6 flex items-center justify-between">
           <span className="text-sm font-medium text-gray-600">Total paid</span>
-          <span className="text-2xl font-bold text-brand-600">${formatPrice(booking.total)}</span>
+          <span className="text-2xl font-bold text-brand-600">£{formatPrice(booking.total)}</span>
         </div>
 
         {/* Actions */}

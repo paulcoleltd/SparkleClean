@@ -84,7 +84,7 @@ describe('GET /api/admin/bookings/export', () => {
     const text = await res.text()
     expect(text).toContain('"Reference"')
     expect(text).toContain('"Name"')
-    expect(text).toContain('"Total (USD)"')
+    expect(text).toContain('"Total (GBP)"')
   })
 
   it('CSV body includes the booking data row', async () => {
@@ -92,7 +92,7 @@ describe('GET /api/admin/bookings/export', () => {
     const text = await res.text()
     expect(text).toContain('"SC-00000001"')
     expect(text).toContain('"Jane Smith"')
-    expect(text).toContain('"150.00"')   // 15000 cents → $150.00
+    expect(text).toContain('"150.00"')   // 15000 pence → £150.00
     expect(text).toContain('"WINDOWS"')  // extras joined with ;
   })
 

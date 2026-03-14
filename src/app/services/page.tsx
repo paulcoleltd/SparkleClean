@@ -24,38 +24,38 @@ const services = [
   {
     icon:     '🏠',
     name:     'Residential Cleaning',
-    price:    '$150',
+    price:    '£150',
     desc:     'Comprehensive home cleaning services designed for busy families.',
     includes: ['Dusting and vacuuming all rooms', 'Kitchen and bathroom sanitisation', 'Floor cleaning and polishing', 'Bed sheet and towel washing', 'Rubbish removal'],
   },
   {
     icon:     '🏢',
     name:     'Commercial Cleaning',
-    price:    '$200',
+    price:    '£200',
     desc:     'Professional office and commercial space cleaning solutions.',
     includes: ['Workstation and desk cleaning', 'Common area sanitisation', 'Restroom deep cleaning', 'Kitchen and break room cleaning', 'Waste disposal and recycling'],
   },
   {
     icon:     '🧹',
     name:     'Deep Cleaning',
-    price:    '$300',
+    price:    '£300',
     desc:     'Intensive cleaning for those hard-to-reach areas and built-up grime.',
     includes: ['Inside oven and refrigerator', 'Behind and under appliances', 'Grout scrubbing', 'Window sill and blind cleaning', 'Baseboards and light fixtures'],
   },
   {
     icon:     '⭐',
     name:     'Specialized Cleaning',
-    price:    '$250',
+    price:    '£250',
     desc:     'Tailored cleaning solutions for unique situations.',
     includes: ['Move-in / move-out cleaning', 'Post-renovation clean-up', 'Event clean-up', 'Seasonal deep cleaning', 'Custom schedule and checklist'],
   },
 ]
 
 const extras = [
-  { name: 'Window cleaning',  price: '+$50' },
-  { name: 'Carpet cleaning',  price: '+$75' },
-  { name: 'Laundry',          price: '+$40' },
-  { name: 'Organisation',     price: '+$60' },
+  { name: 'Window cleaning',  price: '+£50' },
+  { name: 'Carpet cleaning',  price: '+£75' },
+  { name: 'Laundry',          price: '+£40' },
+  { name: 'Organisation',     price: '+£60' },
 ]
 
 export default async function ServicesPage() {

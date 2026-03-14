@@ -85,7 +85,7 @@ export default async function BookingDetailPage({
               <div>
                 <dt className="text-gray-500">Address</dt>
                 <dd className="font-medium text-gray-900">
-                  {booking.address}, {booking.city}, {booking.state} {booking.zip}
+                  {booking.address}, {booking.city}{booking.county ? `, ${booking.county}` : ''}, {booking.postcode}
                 </dd>
               </div>
             </dl>
@@ -143,8 +143,8 @@ export default async function BookingDetailPage({
           {/* Financials */}
           <section className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">Financials</h2>
-            <p className="text-3xl font-bold text-brand-600">${formatPrice(booking.total)}</p>
-            <p className="text-xs text-gray-400 mt-1">All amounts stored in cents</p>
+            <p className="text-3xl font-bold text-brand-600">£{formatPrice(booking.total)}</p>
+            <p className="text-xs text-gray-400 mt-1">All amounts stored in pence</p>
           </section>
         </div>
 

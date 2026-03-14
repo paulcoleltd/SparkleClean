@@ -33,7 +33,7 @@ export default function TermsPage() {
             <h2 className="text-lg font-semibold text-gray-800 mb-3">3. Bookings and Payment</h2>
             <ul className="list-disc list-inside space-y-1">
               <li>Bookings are confirmed only after full payment via Stripe</li>
-              <li>Prices displayed on the site are in USD and include all applicable fees</li>
+              <li>Prices displayed on the site are in GBP and include all applicable fees</li>
               <li>We reserve the right to adjust pricing with 14 days notice for recurring schedules</li>
               <li>Payment is handled by Stripe; we do not store card details</li>
             </ul>

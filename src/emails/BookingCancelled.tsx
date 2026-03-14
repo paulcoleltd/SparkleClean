@@ -83,7 +83,7 @@ export function BookingCancelledEmail({ booking, cancelledBy }: Props) {
               Questions? Contact us at{' '}
               <Link href="mailto:info@sparkleclean.com" style={link}>info@sparkleclean.com</Link>
               {' '}or call{' '}
-              <Link href="tel:+11234567890" style={link}>(123) 456-7890</Link>.
+              <Link href="tel:+442079460958" style={link}>+44 20 7946 0958</Link>.
             </Text>
           </Section>
 

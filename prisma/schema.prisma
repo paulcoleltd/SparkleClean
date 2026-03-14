@@ -19,8 +19,8 @@ model Booking {
   phone        String        @db.VarChar(30)
   address      String        @db.VarChar(300)
   city         String        @db.VarChar(100)
-  state        String        @db.Char(2)
-  zip          String        @db.VarChar(10)
+  county       String?       @db.VarChar(100)
+  postcode     String        @db.VarChar(10)
   // Service details
   service      ServiceType
   frequency    Frequency
@@ -30,7 +30,7 @@ model Booking {
   extras       Extra[]
   notes        String?       @db.Text
   adminNotes   String?       @db.Text  // internal staff notes — never shown to customer
-  // Financials — stored in cents, never floats
+  // Financials — stored in pence, never floats
   total            Int
   // Status
   status           BookingStatus @default(PENDING_PAYMENT)
@@ -95,8 +95,8 @@ model RecurringSchedule {
   phone        String         @db.VarChar(30)
   address      String         @db.VarChar(300)
   city         String         @db.VarChar(100)
-  state        String         @db.Char(2)
-  zip          String         @db.VarChar(10)
+  county       String?        @db.VarChar(100)
+  postcode     String         @db.VarChar(10)
   // Service config — same for every occurrence
   service      ServiceType
   frequency    Frequency
@@ -105,7 +105,7 @@ model RecurringSchedule {
   extras       Extra[]
   notes        String?        @db.Text
   marketing    Boolean        @default(false)
-  // Finance — price per occurrence in cents
+  // Finance — price per occurrence in pence
   baseTotal    Int
   // Status
   status       ScheduleStatus @default(ACTIVE)

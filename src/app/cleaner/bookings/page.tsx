@@ -74,7 +74,7 @@ function BookingCard({ booking }: { booking: Awaited<ReturnType<typeof getAssign
         <div>
           <p className="font-semibold text-gray-900">{booking.name}</p>
           <p className="mt-0.5 text-sm text-gray-500">
-            {booking.address}, {booking.city}, {booking.state} {booking.zip}
+            {booking.address}, {booking.city}{booking.county ? `, ${booking.county}` : ''}, {booking.postcode}
           </p>
         </div>
         <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyle}`}>

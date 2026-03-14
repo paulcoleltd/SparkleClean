@@ -139,7 +139,7 @@ function BookingTable({ bookings, showCancel = false }: { bookings: BookingRow[]
                     {SERVICE_LABELS[b.service as keyof typeof SERVICE_LABELS] ?? b.service}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{formatDate(b.scheduledAt)}</td>
-                  <td className="px-4 py-3 font-medium text-gray-900">${formatPrice(b.total)}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900">£{formatPrice(b.total)}</td>
                   <td className="px-4 py-3">
                     <Link
                       href={`/account/bookings/${b.id}`}

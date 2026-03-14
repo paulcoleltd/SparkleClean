@@ -63,7 +63,7 @@ export default async function ReschedulePage({
           <div>
             <dt className="text-gray-500">Address</dt>
             <dd className="font-medium text-gray-900">
-              {booking.city}, {booking.state}
+              {booking.city}{booking.county ? `, ${booking.county}` : ''}
             </dd>
           </div>
         </dl>
