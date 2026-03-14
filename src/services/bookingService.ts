@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { toReference } from '@/lib/utils'
 import type { CreateBookingInput } from '@/types/booking'
 import type { Booking } from '@prisma/client'
+import type { ServiceType, Frequency, PropertySize, TimeSlot, Extra, BookingStatus } from '@prisma/client'
 
 // ─── Pricing (server-side only — never trust a total from the client) ─────────
 
@@ -104,12 +105,12 @@ export async function createBooking(
       city:         input.city,
       state:        input.state,
       zip:          input.zip,
-      service:      input.service as any,
-      frequency:    input.frequency as any,
-      propertySize: input.propertySize as any,
+      service:      input.service as ServiceType,
+      frequency:    input.frequency as Frequency,
+      propertySize: input.propertySize as PropertySize,
       scheduledAt,
-      timeSlot:     input.timeSlot as any,
-      extras:       input.extras as any[],
+      timeSlot:     input.timeSlot as TimeSlot,
+      extras:       input.extras as Extra[],
       notes:               input.notes,
       total,
       marketing:           input.marketing,
@@ -130,7 +131,7 @@ export async function getBookings(options: GetBookingsOptions = {}) {
 
   const where = {
     deletedAt: null,
-    ...(status ? { status: status as any } : {}),
+    ...(status ? { status: status as BookingStatus } : {}),
     ...(search ? {
       OR: [
         { name:      { contains: search, mode: 'insensitive' as const } },
@@ -210,7 +211,7 @@ export async function rescheduleBooking(id: string, date: string, timeSlot: stri
   const scheduledAt = toScheduledAt(date, timeSlot)
   return prisma.booking.update({
     where: { id },
-    data:  { scheduledAt, timeSlot: timeSlot as any },
+    data:  { scheduledAt, timeSlot: timeSlot as TimeSlot },
   })
 }
 

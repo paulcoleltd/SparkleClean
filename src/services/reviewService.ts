@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { render } from '@react-email/components'
 import ReviewInvite from '@/emails/ReviewInvite'
 import type { Booking } from '@prisma/client'
+import { z } from 'zod'
 
 const getResend = (() => {
   let client: Resend | null = null
@@ -14,22 +15,22 @@ const APP_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
 export async function sendReviewInvite(booking: Booking): Promise<void> {
   const { randomUUID } = await import('crypto')
-  const token = randomUUID()
-
-  // Store token and timestamp on booking
-  await prisma.booking.update({
-    where: { id: booking.id },
-    data:  { reviewToken: token, reviewInviteSentAt: new Date() },
-  })
-
+  const token     = randomUUID()
   const reviewUrl = `${APP_URL}/review/${token}`
   const html      = await render(ReviewInvite({ booking, reviewUrl }))
 
+  // Send email FIRST — only persist the token if delivery succeeds.
+  // This prevents orphaned tokens when the email provider is unavailable.
   await getResend().emails.send({
     from:    'SparkleClean <bookings@sparkleclean.com>',
     to:      booking.email,
     subject: `How did we do? — ${booking.reference}`,
     html,
+  })
+
+  await prisma.booking.update({
+    where: { id: booking.id },
+    data:  { reviewToken: token, reviewInviteSentAt: new Date() },
   })
 }
 
@@ -42,17 +43,15 @@ export async function getBookingByReviewToken(token: string) {
   })
 }
 
-const ReviewSchema = {
-  rating: (v: unknown) => Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 5,
-  title:  (v: unknown) => typeof v === 'string' && (v as string).trim().length >= 3,
-  body:   (v: unknown) => typeof v === 'string' && (v as string).trim().length >= 10,
-}
+const ReviewInputSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+  title:  z.string().trim().min(3, 'Title must be at least 3 characters').max(200),
+  body:   z.string().trim().min(10, 'Review must be at least 10 characters'),
+})
 
 export function validateReviewInput(data: unknown): { rating: number; title: string; body: string } | null {
-  if (!data || typeof data !== 'object') return null
-  const d = data as Record<string, unknown>
-  if (!ReviewSchema.rating(d.rating) || !ReviewSchema.title(d.title) || !ReviewSchema.body(d.body)) return null
-  return { rating: d.rating as number, title: (d.title as string).trim(), body: (d.body as string).trim() }
+  const result = ReviewInputSchema.safeParse(data)
+  return result.success ? result.data : null
 }
 
 export async function submitReview(

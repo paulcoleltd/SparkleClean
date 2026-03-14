@@ -2,19 +2,38 @@ import { prisma } from '@/lib/prisma'
 import { toReference } from '@/lib/utils'
 import type { Booking, RecurringSchedule } from '@prisma/client'
 import type { CreateBookingInput } from '@/types/booking'
+import type { ServiceType, Frequency, PropertySize, TimeSlot, Extra, ScheduleStatus } from '@prisma/client'
 
 // ─── Interval helpers ─────────────────────────────────────────────────────────
 
 const INTERVAL_DAYS: Record<string, number> = {
   WEEKLY:   7,
   BIWEEKLY: 14,
-  MONTHLY:  30,
 }
 
 const TIME_SLOT_HOURS: Record<string, number> = {
   MORNING:   8,
   AFTERNOON: 12,
   EVENING:   16,
+}
+
+/**
+ * Add `times` occurrences of a recurring interval to a base date.
+ * MONTHLY uses calendar-month arithmetic (avoids the 30-day drift bug).
+ * Clamps to last day of month when the base day doesn't exist (e.g. Jan 31 + 1 month → Feb 28).
+ */
+function addOccurrenceInterval(base: Date, frequency: string, times: number): Date {
+  if (frequency === 'MONTHLY') {
+    const result = new Date(base)
+    result.setMonth(result.getMonth() + times)
+    // If JS rolled over (e.g. Jan 31 → Mar 3), clamp back to last day of target month
+    if (result.getDate() < base.getDate()) result.setDate(0)
+    return result
+  }
+  const days = INTERVAL_DAYS[frequency] ?? 7
+  const result = new Date(base)
+  result.setDate(result.getDate() + days * times)
+  return result
 }
 
 // ─── Create a schedule record ─────────────────────────────────────────────────
@@ -32,11 +51,11 @@ export async function createRecurringSchedule(
       city:        input.city,
       state:       input.state,
       zip:         input.zip,
-      service:     input.service      as any,
-      frequency:   input.frequency    as any,
-      propertySize: input.propertySize as any,
-      timeSlot:    input.timeSlot     as any,
-      extras:      input.extras       as any[],
+      service:     input.service      as ServiceType,
+      frequency:   input.frequency    as Frequency,
+      propertySize: input.propertySize as PropertySize,
+      timeSlot:    input.timeSlot     as TimeSlot,
+      extras:      input.extras       as Extra[],
       notes:       input.notes,
       marketing:   input.marketing,
       baseTotal,
@@ -55,14 +74,10 @@ export async function generateOccurrences(
   firstScheduledAt: Date,
   count = 6
 ): Promise<Booking[]> {
-  const intervalDays = INTERVAL_DAYS[schedule.frequency]
-  if (!intervalDays) return [] // ONE_TIME has no interval — should never happen
-
   const { randomUUID } = await import('crypto')
 
   const creates = Array.from({ length: count }, (_, i) => {
-    const scheduledAt = new Date(firstScheduledAt)
-    scheduledAt.setDate(scheduledAt.getDate() + intervalDays * (i + 1))
+    const scheduledAt = addOccurrenceInterval(firstScheduledAt, schedule.frequency, i + 1)
     // Preserve the original time-of-day from the timeSlot
     scheduledAt.setHours(TIME_SLOT_HOURS[schedule.timeSlot as string] ?? 8, 0, 0, 0)
 
@@ -85,7 +100,7 @@ export async function generateOccurrences(
         propertySize:       schedule.propertySize,
         scheduledAt,
         timeSlot:           schedule.timeSlot,
-        extras:             schedule.extras as any[],
+        extras:             schedule.extras as Extra[],
         notes:              schedule.notes,
         marketing:          schedule.marketing,
         total:              schedule.baseTotal,
@@ -141,7 +156,7 @@ export async function getSchedules(options: { page?: number; status?: string } =
   const pageSize = 20
 
   const where = {
-    ...(status ? { status: status as any } : {}),
+    ...(status ? { status: status as ScheduleStatus } : {}),
   }
 
   const [schedules, total] = await prisma.$transaction([

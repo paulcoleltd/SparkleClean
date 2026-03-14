@@ -46,7 +46,13 @@ export async function POST(req: NextRequest) {
   }
 
   // Mark first booking as PENDING (paid, awaiting staff confirmation)
-  await updateBookingStatus(booking.id, 'PENDING')
+  // Wrapped in try/catch — a DB failure here must return 500 so Stripe retries
+  try {
+    await updateBookingStatus(booking.id, 'PENDING')
+  } catch (err) {
+    console.error('[Stripe webhook] CRITICAL: Failed to update booking status for', booking.id, err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 
   // If this is the first payment of a recurring series, generate future occurrences
   if (booking.recurringScheduleId) {

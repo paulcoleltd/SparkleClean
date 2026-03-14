@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth, signOut } from '../../../../auth'
+import { auth } from '../../../../auth'
 import { prisma } from '@/lib/prisma'
 
 /**
@@ -7,8 +7,7 @@ import { prisma } from '@/lib/prisma'
  * Permanently deletes the customer record and anonymises their bookings
  * to satisfy GDPR Article 17 (right to erasure).
  *
- * Bookings are retained (for financial records) but personal fields are
- * overwritten with placeholder values. The customer row is hard-deleted.
+ * Security: session cookies are cleared so the deleted user cannot reuse their JWT.
  */
 export async function DELETE(_req: NextRequest) {
   const session = await auth()
@@ -22,19 +21,31 @@ export async function DELETE(_req: NextRequest) {
   const customerId = session.user.id
   const email      = session.user.email
 
-  await prisma.$transaction([
-    // Anonymise all bookings linked to this email
-    prisma.booking.updateMany({
-      where: { email },
-      data:  {
-        name:  '[deleted]',
-        email: `deleted-${customerId}@example.com`,
-        phone: '[deleted]',
-      },
-    }),
-    // Hard-delete the customer account
-    prisma.customer.delete({ where: { id: customerId } }),
-  ])
+  try {
+    await prisma.$transaction([
+      // Anonymise all bookings linked to this email (GDPR right to erasure)
+      prisma.booking.updateMany({
+        where: { email },
+        data:  {
+          name:  '[deleted]',
+          email: `deleted-${customerId}@example.com`,
+          phone: '[deleted]',
+        },
+      }),
+      // Hard-delete the customer account
+      prisma.customer.delete({ where: { id: customerId } }),
+    ])
+  } catch (err) {
+    console.error('[DELETE /api/account] Failed to delete customer', customerId, err)
+    return NextResponse.json(
+      { error: { message: 'Failed to delete account. Please try again.', code: 'INTERNAL_ERROR' } },
+      { status: 500 }
+    )
+  }
 
-  return NextResponse.json({ data: { deleted: true } })
+  // Clear session cookie — prevents reuse of the now-invalid JWT (MITRE T1539 mitigation)
+  const response = NextResponse.json({ data: { deleted: true } })
+  response.cookies.set('authjs.session-token',          '', { maxAge: 0, path: '/' })
+  response.cookies.set('__Secure-authjs.session-token', '', { maxAge: 0, path: '/' })
+  return response
 }

@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '../../../../../../auth'
 import { prisma } from '@/lib/prisma'
+import { z } from 'zod'
+
+const ExportStatusSchema = z.enum(['PENDING_PAYMENT', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'])
+
+/** Neutralise CSV formula injection (=, +, -, @, TAB, CR triggers) */
+function sanitizeCsv(str: string): string {
+  return /^[=+\-@\t\r]/.test(str) ? `'${str}` : str
+}
 
 function escape(value: unknown): string {
-  const str = value == null ? '' : String(value)
-  // Wrap in quotes and escape internal quotes
+  const str = sanitizeCsv(value == null ? '' : String(value))
   return `"${str.replace(/"/g, '""')}"`
 }
 
@@ -22,12 +29,14 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url)
-  const status = searchParams.get('status') ?? undefined
+  const rawStatus    = searchParams.get('status')
+  const statusParsed = rawStatus ? ExportStatusSchema.safeParse(rawStatus) : null
+  const status       = statusParsed?.success ? statusParsed.data : undefined
 
   const bookings = await prisma.booking.findMany({
     where: {
       deletedAt: null,
-      ...(status ? { status: status as any } : {}),
+      ...(status ? { status } : {}),
     },
     orderBy: { createdAt: 'desc' },
     select: {

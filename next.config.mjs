@@ -16,7 +16,7 @@ const contentSecurityPolicy = csp({
   'style-src':       ["'self'", "'unsafe-inline'"],
   'img-src':         ["'self'", 'data:', 'blob:'],
   'font-src':        ["'self'"],
-  'connect-src':     ["'self'"],
+  'connect-src':     ["'self'", 'https://api.stripe.com', 'https://checkout.stripe.com', 'https://*.supabase.co'],
   'media-src':       ["'self'"],
   'object-src':      ["'none'"],
   'frame-src':       ['https://js.stripe.com'],

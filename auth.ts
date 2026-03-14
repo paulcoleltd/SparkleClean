@@ -3,6 +3,36 @@ import Credentials from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 
+// ─── Constant-time auth guard ─────────────────────────────────────────────────
+// Pre-compute a dummy bcrypt hash at module startup (once, ~250 ms, cached).
+// Equalises response time when user not found — prevents timing-based email
+// enumeration (MITRE ATT&CK T1589.002).
+const DUMMY_HASH_PROMISE = bcrypt.hash('__sparkle_auth_dummy_no_match__', 12)
+
+// ─── Session re-validation ────────────────────────────────────────────────────
+// Periodically verify the JWT subject still exists in the DB.
+// Deleted or deactivated accounts lose access within RECHECK_MS.
+const RECHECK_MS = 5 * 60_000 // 5 minutes
+
+async function verifyUserExists(id: string, role: string): Promise<boolean> {
+  try {
+    if (role === 'admin') {
+      return !!(await prisma.admin.findUnique({ where: { id }, select: { id: true } }))
+    }
+    if (role === 'customer') {
+      return !!(await prisma.customer.findUnique({ where: { id }, select: { id: true } }))
+    }
+    if (role === 'cleaner') {
+      const c = await prisma.cleaner.findUnique({ where: { id }, select: { id: true, active: true } })
+      return !!(c?.active)
+    }
+    return false
+  } catch {
+    // Fail open on transient DB errors — avoids logging out all users during an outage
+    return true
+  }
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     // ── Admin login ──────────────────────────────────────────────────────────
@@ -15,10 +45,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
 
+        const dummyHash = await DUMMY_HASH_PROMISE
         const admin = await prisma.admin.findUnique({
           where: { email: credentials.email as string },
         })
-        if (!admin) return null
+
+        // Always run bcrypt — equalises timing regardless of whether user exists
+        if (!admin) {
+          await bcrypt.compare(credentials.password as string, dummyHash)
+          return null
+        }
 
         const valid = await bcrypt.compare(credentials.password as string, admin.passwordHash)
         if (!valid) return null
@@ -37,10 +73,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
 
+        const dummyHash = await DUMMY_HASH_PROMISE
         const customer = await prisma.customer.findUnique({
           where: { email: credentials.email as string },
         })
-        if (!customer) return null
+
+        if (!customer) {
+          await bcrypt.compare(credentials.password as string, dummyHash)
+          return null
+        }
 
         const valid = await bcrypt.compare(credentials.password as string, customer.passwordHash)
         if (!valid) return null
@@ -59,10 +100,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
 
+        const dummyHash = await DUMMY_HASH_PROMISE
         const cleaner = await prisma.cleaner.findUnique({
           where: { email: credentials.email as string },
         })
-        if (!cleaner || !cleaner.active) return null
+
+        if (!cleaner || !cleaner.active) {
+          await bcrypt.compare(credentials.password as string, dummyHash)
+          return null
+        }
 
         const valid = await bcrypt.compare(credentials.password as string, cleaner.passwordHash)
         if (!valid) return null
@@ -72,17 +118,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
 
-  // No global signIn page — each area defines its own
   pages: { signIn: '/account/login' },
 
   session: { strategy: 'jwt' },
 
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
+      // Initial sign-in — embed role and freshness timestamp into the JWT
       if (user) {
-        token.id   = user.id ?? ''
-        token.role = user.role
+        token.id        = user.id ?? ''
+        token.role      = user.role
+        token.checkedAt = Date.now()
+        return token
       }
+
+      // Periodic re-validation: confirm user still exists every 5 minutes.
+      // Returns null to invalidate the session if user was deleted or deactivated.
+      const checkedAt = (token.checkedAt as number) ?? 0
+      if (Date.now() - checkedAt > RECHECK_MS) {
+        const exists = await verifyUserExists(token.id as string, token.role as string)
+        if (!exists) return null
+        token.checkedAt = Date.now()
+      }
+
       return token
     },
 
@@ -97,14 +155,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     authorized({ auth: session, request }) {
       const { pathname } = request.nextUrl
 
-      // Admin area — must be signed in as admin
       if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
         if (session?.user?.role !== 'admin') {
           return Response.redirect(new URL('/admin/login', request.url))
         }
       }
 
-      // Customer account area — must be signed in (any role)
       const publicAccountPaths = [
         '/account/login',
         '/account/register',
@@ -120,7 +176,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
       }
 
-      // Cleaner portal — must be signed in as cleaner
       if (pathname.startsWith('/cleaner') && pathname !== '/cleaner/login') {
         if (session?.user?.role !== 'cleaner') {
           return Response.redirect(new URL('/cleaner/login', request.url))

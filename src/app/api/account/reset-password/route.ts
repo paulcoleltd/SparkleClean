@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { resetPasswordWithToken } from '@/services/customerService'
+import { rateLimit, getClientIp, rateLimitResponse } from '@/lib/rateLimit'
+
+// 5 attempts per IP per 15 minutes — prevents token-stuffing attacks
+const LIMIT     = 5
+const WINDOW_MS = 15 * 60_000
 
 const ResetSchema = z.object({
   token:    z.string().uuid(),
@@ -8,6 +13,11 @@ const ResetSchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
+  // Rate limit BEFORE any bcrypt or DB work
+  const ip     = getClientIp(req)
+  const rl     = rateLimit(`reset-pw:${ip}`, LIMIT, WINDOW_MS)
+  if (!rl.allowed) return rateLimitResponse(rl, LIMIT)
+
   let body: unknown
   try {
     body = await req.json()
