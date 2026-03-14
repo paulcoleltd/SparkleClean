@@ -76,6 +76,8 @@ export async function generateOccurrences(
 ): Promise<Booking[]> {
   const { randomUUID } = await import('crypto')
 
+  if (schedule.frequency === 'ONE_TIME') return [] // ONE_TIME has no interval — should never happen
+
   const creates = Array.from({ length: count }, (_, i) => {
     const scheduledAt = addOccurrenceInterval(firstScheduledAt, schedule.frequency, i + 1)
     // Preserve the original time-of-day from the timeSlot

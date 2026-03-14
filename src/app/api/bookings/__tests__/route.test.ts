@@ -56,9 +56,9 @@ const validPayload = {
   email:        'jane@example.com',
   phone:        '(555) 123-4567',
   address:      '123 Main Street',
-  city:         'Springfield',
-  state:        'IL',
-  zip:          '62701',
+  city:         'London',
+  county:       'Greater London',
+  postcode:     'SW1A 1AA',
   service:      'RESIDENTIAL',
   frequency:    'ONE_TIME',
   propertySize: 'MEDIUM',
@@ -152,8 +152,8 @@ describe('POST /api/bookings', () => {
     expect(body.error.code).toBe('VALIDATION_ERROR')
   })
 
-  it('returns 400 for an invalid ZIP code', async () => {
-    const res  = await POST(makeRequest({ ...validPayload, zip: 'ABCDE' }) as never)
+  it('returns 400 for an invalid postcode', async () => {
+    const res  = await POST(makeRequest({ ...validPayload, postcode: '12345' }) as never)
     expect(res.status).toBe(400)
   })
 

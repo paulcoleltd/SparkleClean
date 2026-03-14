@@ -6,9 +6,9 @@ const valid = {
   email:        'jane@example.com',
   phone:        '(555) 123-4567',
   address:      '123 Main Street',
-  city:         'Springfield',
-  state:        'IL',
-  zip:          '62701',
+  city:         'London',
+  county:       'Greater London',
+  postcode:     'SW1A 1AA',
   service:      'RESIDENTIAL' as const,
   frequency:    'ONE_TIME' as const,
   propertySize: 'MEDIUM' as const,
@@ -52,19 +52,25 @@ describe('CreateBookingSchema', () => {
     expect(result.error?.issues[0]?.path).toContain('phone')
   })
 
-  it('rejects invalid ZIP — letters', () => {
-    const result = CreateBookingSchema.safeParse({ ...valid, zip: 'ABCDE' })
+  it('rejects invalid postcode — US ZIP digits only', () => {
+    const result = CreateBookingSchema.safeParse({ ...valid, postcode: '12345' })
     expect(result.success).toBe(false)
-    expect(result.error?.issues[0]?.path).toContain('zip')
+    expect(result.error?.issues[0]?.path).toContain('postcode')
   })
 
-  it('rejects invalid ZIP — too short', () => {
-    const result = CreateBookingSchema.safeParse({ ...valid, zip: '1234' })
+  it('rejects invalid postcode — random letters', () => {
+    const result = CreateBookingSchema.safeParse({ ...valid, postcode: 'ABCDE' })
     expect(result.success).toBe(false)
+    expect(result.error?.issues[0]?.path).toContain('postcode')
   })
 
-  it('accepts 9-digit ZIP', () => {
-    const result = CreateBookingSchema.safeParse({ ...valid, zip: '62701-1234' })
+  it('accepts valid UK postcode — M1 1AE', () => {
+    const result = CreateBookingSchema.safeParse({ ...valid, postcode: 'M1 1AE' })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts valid UK postcode — B1 1BB', () => {
+    const result = CreateBookingSchema.safeParse({ ...valid, postcode: 'B1 1BB' })
     expect(result.success).toBe(true)
   })
 

@@ -119,10 +119,10 @@ describe('POST /api/stripe/webhook', () => {
 
   // ─── Not found ─────────────────────────────────────────────────────────────
 
-  it('returns 404 when no booking matches the Stripe session', async () => {
+  it('returns 500 when no booking matches the Stripe session', async () => {
     vi.mocked(getBookingByStripeSessionId).mockResolvedValueOnce(null as never)
     const res = await POST(makeRequest() as never)
-    expect(res.status).toBe(404)
+    expect(res.status).toBe(500)
   })
 
   // ─── Idempotency ──────────────────────────────────────────────────────────

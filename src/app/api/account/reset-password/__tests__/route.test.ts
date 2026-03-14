@@ -1,5 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+vi.mock('@/lib/rateLimit', () => ({
+  rateLimit:         vi.fn().mockReturnValue({ allowed: true, remaining: 4, resetInSeconds: 900 }),
+  getClientIp:       vi.fn().mockReturnValue('127.0.0.1'),
+  rateLimitResponse: vi.fn().mockReturnValue(
+    new Response(JSON.stringify({ error: { message: 'Too many attempts', code: 'RATE_LIMITED' } }), { status: 429 })
+  ),
+}))
+
 vi.mock('@/services/customerService', () => ({
   resetPasswordWithToken: vi.fn(),
 }))

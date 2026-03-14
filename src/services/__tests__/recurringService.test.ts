@@ -33,9 +33,9 @@ function makeSchedule(overrides: Partial<Record<string, unknown>> = {}) {
     email:       'jane@example.com',
     phone:       '(555) 123-4567',
     address:     '123 Main St',
-    city:        'Springfield',
-    state:       'IL',
-    zip:         '62701',
+    city:        'London',
+    county:      'Greater London',
+    postcode:    'SW1A 1AA',
     service:     'RESIDENTIAL',
     frequency:   'WEEKLY',
     propertySize:'MEDIUM',
@@ -116,8 +116,9 @@ describe('generateOccurrences()', () => {
     expect(diffDays).toBe(14)
   })
 
-  it('spaces MONTHLY occurrences 30 days apart', async () => {
-    const first    = new Date('2026-04-01T08:00:00.000Z')
+  it('spaces MONTHLY occurrences by calendar month', async () => {
+    // Jan 15 + 1 month = Feb 15, Jan 15 + 2 months = Mar 15
+    const first    = new Date('2026-01-15T08:00:00.000Z')
     const schedule = makeSchedule({ frequency: 'MONTHLY' })
     await generateOccurrences(schedule as never, first, 2)
 
@@ -125,8 +126,12 @@ describe('generateOccurrences()', () => {
     const date1 = (calls[0]![0] as { data: { scheduledAt: Date } }).data.scheduledAt
     const date2 = (calls[1]![0] as { data: { scheduledAt: Date } }).data.scheduledAt
 
-    const diffDays = Math.round((date2.getTime() - date1.getTime()) / (1000 * 60 * 60 * 24))
-    expect(diffDays).toBe(30)
+    // First occurrence: Jan 15 + 1 month = Feb 15
+    expect(date1.getMonth()).toBe(1)   // February (0-indexed)
+    expect(date1.getDate()).toBe(15)
+    // Second occurrence: Jan 15 + 2 months = Mar 15
+    expect(date2.getMonth()).toBe(2)   // March (0-indexed)
+    expect(date2.getDate()).toBe(15)
   })
 
   // ─── First occurrence is after the original ────────────────────────────────
