@@ -215,3 +215,28 @@ safe in the DB and the operation can be retried. An undelivered email with a val
 is recoverable; a delivered email with no token is not.
 
 **Pattern to avoid:** Sending a single-use link before persisting the token it references.
+
+---
+
+## Lesson: Use the session-mode pooler (port 5432) when the direct DB host is blocked — 2026-03-14
+
+**Bug:** `prisma db push` and migrations failed with P1001 because the direct PostgreSQL
+host (`db.*.supabase.co:5432`) was blocked by the network firewall.
+
+**Fix:** Supabase provides a second port 5432 on the *pooler* host
+(`*.pooler.supabase.com:5432`) in session mode. This supports DDL statements and full
+Prisma migrations, unlike the transaction-mode pooler (port 6543) which doesn't.
+
+Connection string pattern:
+```
+DIRECT_URL="postgresql://postgres.PROJECT_REF:PASSWORD@REGION.pooler.supabase.com:5432/postgres?sslmode=require"
+```
+Note: URL-encode special chars in passwords (`!` → `%21`).
+
+**Verification:** TCP port reachability can be tested with:
+```bash
+timeout 5 bash -c 'echo > /dev/tcp/REGION.pooler.supabase.com/5432' && echo OPEN || echo BLOCKED
+```
+
+**Pattern to avoid:** Assuming port 5432 must target the direct DB host. The pooler
+session-mode endpoint is an alternative route that bypasses most corporate firewalls.
