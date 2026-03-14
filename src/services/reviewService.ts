@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { Resend } from 'resend'
 import { render } from '@react-email/components'
 import ReviewInvite from '@/emails/ReviewInvite'
-import type { Booking } from '@prisma/client'
+import type { Booking, ReviewStatus } from '@prisma/client'
 import { z } from 'zod'
 
 const getResend = (() => {
@@ -19,18 +19,19 @@ export async function sendReviewInvite(booking: Booking): Promise<void> {
   const reviewUrl = `${APP_URL}/review/${token}`
   const html      = await render(ReviewInvite({ booking, reviewUrl }))
 
-  // Send email FIRST — only persist the token if delivery succeeds.
-  // This prevents orphaned tokens when the email provider is unavailable.
+  // Persist the token FIRST — an unused token in the DB is harmless and can be retried.
+  // Sending the email before writing the token risks delivering a link that returns "invalid token"
+  // with no recovery path if the DB write subsequently fails.
+  await prisma.booking.update({
+    where: { id: booking.id },
+    data:  { reviewToken: token, reviewInviteSentAt: new Date() },
+  })
+
   await getResend().emails.send({
     from:    'SparkleClean <bookings@sparkleclean.com>',
     to:      booking.email,
     subject: `How did we do? — ${booking.reference}`,
     html,
-  })
-
-  await prisma.booking.update({
-    where: { id: booking.id },
-    data:  { reviewToken: token, reviewInviteSentAt: new Date() },
   })
 }
 
@@ -93,11 +94,10 @@ export async function getPublishedReviews(limit = 6) {
 
 // ─── Admin ────────────────────────────────────────────────────────────────────
 
-export async function getReviews(options: { page?: number; status?: string } = {}) {
+export async function getReviews(options: { page?: number; status?: ReviewStatus } = {}) {
   const { page = 1, status } = options
   const pageSize = 20
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const where    = status ? { status: status as any } : {}
+  const where    = status ? { status } : {}
 
   const [reviews, total] = await prisma.$transaction([
     prisma.review.findMany({

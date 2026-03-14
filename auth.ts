@@ -4,14 +4,15 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 
 // ─── Constant-time auth guard ─────────────────────────────────────────────────
-// Pre-compute a dummy bcrypt hash at module startup (once, ~250 ms, cached).
+// Pre-compute a dummy bcrypt hash at module startup (once; ~300–400 ms at cost=12, cached for the process lifetime).
 // Equalises response time when user not found — prevents timing-based email
 // enumeration (MITRE ATT&CK T1589.002).
 const DUMMY_HASH_PROMISE = bcrypt.hash('__sparkle_auth_dummy_no_match__', 12)
 
 // ─── Session re-validation ────────────────────────────────────────────────────
 // Periodically verify the JWT subject still exists in the DB.
-// Deleted or deactivated accounts lose access within RECHECK_MS.
+// Deleted accounts lose access within RECHECK_MS.
+// For cleaners, the `active` flag is also checked — inactive cleaners lose access on the next JWT refresh.
 const RECHECK_MS = 5 * 60_000 // 5 minutes
 
 async function verifyUserExists(id: string, role: string): Promise<boolean> {
@@ -27,8 +28,10 @@ async function verifyUserExists(id: string, role: string): Promise<boolean> {
       return !!(c?.active)
     }
     return false
-  } catch {
-    // Fail open on transient DB errors — avoids logging out all users during an outage
+  } catch (err) {
+    // Fail open on transient DB errors — avoids logging out all users during an outage.
+    // Log the error so DB connectivity issues are visible in monitoring.
+    console.error('[auth] verifyUserExists: DB error, failing open', { id, role, err })
     return true
   }
 }
@@ -137,7 +140,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       const checkedAt = (token.checkedAt as number) ?? 0
       if (Date.now() - checkedAt > RECHECK_MS) {
         const exists = await verifyUserExists(token.id as string, token.role as string)
-        if (!exists) return null
+        if (!exists) {
+          console.warn('[auth] Session revoked — user no longer exists', { userId: token.id, role: token.role })
+          return null
+        }
         token.checkedAt = Date.now()
       }
 
@@ -145,6 +151,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
 
     session({ session, token }) {
+      // Guard against null token — can occur when jwt() returns null to invalidate a session
+      if (!token) return session
       if (session.user) {
         session.user.id   = token.id
         session.user.role = token.role
@@ -171,7 +179,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         pathname.startsWith('/account/reset-password/')
 
       if (pathname.startsWith('/account') && !isPublicAccountPath) {
-        if (!session?.user) {
+        if (!session?.user || session.user.role !== 'customer') {
           return Response.redirect(new URL('/account/login', request.url))
         }
       }

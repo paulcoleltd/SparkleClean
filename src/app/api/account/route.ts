@@ -20,6 +20,13 @@ export async function DELETE(_req: NextRequest) {
 
   const customerId = session.user.id
   const email      = session.user.email
+  if (!email) {
+    console.error('[DELETE /api/account] Session missing email — cannot anonymise bookings', { customerId })
+    return NextResponse.json(
+      { error: { message: 'Session data incomplete. Please log out and log in again.', code: 'SESSION_INVALID' } },
+      { status: 400 }
+    )
+  }
 
   try {
     await prisma.$transaction([
@@ -46,6 +53,6 @@ export async function DELETE(_req: NextRequest) {
   // Clear session cookie — prevents reuse of the now-invalid JWT (MITRE T1539 mitigation)
   const response = NextResponse.json({ data: { deleted: true } })
   response.cookies.set('authjs.session-token',          '', { maxAge: 0, path: '/' })
-  response.cookies.set('__Secure-authjs.session-token', '', { maxAge: 0, path: '/' })
+  response.cookies.set('__Secure-authjs.session-token', '', { maxAge: 0, path: '/', secure: true, httpOnly: true, sameSite: 'lax' })
   return response
 }

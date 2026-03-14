@@ -36,8 +36,9 @@ export async function POST(req: NextRequest) {
 
   const booking = await getBookingByStripeSessionId(session.id)
   if (!booking || booking.id !== bookingId) {
+    // Return 500 (not 404) so Stripe retries — handles race between webhook arrival and DB write commit
     console.error('[Stripe webhook] Booking not found for session', session.id)
-    return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+    return NextResponse.json({ error: 'Booking not found' }, { status: 500 })
   }
 
   // Idempotency guard — Stripe may deliver the same event more than once

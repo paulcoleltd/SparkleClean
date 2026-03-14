@@ -30,7 +30,7 @@ export default async function AdminReviewsPage({
   const { page: pageParam, status } = await searchParams
   const page = Math.max(1, Number(pageParam ?? 1))
 
-  const { reviews, total, totalPages } = await getReviews({ page, status })
+  const { reviews, total, totalPages } = await getReviews({ page, status: status as ReviewStatus | undefined })
 
   function pageUrl(p: number) {
     const params = new URLSearchParams()

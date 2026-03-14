@@ -134,3 +134,84 @@ from the browser. Stripe.js needs `https://api.stripe.com` and
 
 **Pattern to avoid:** Setting `connect-src: ['self']` before auditing which external
 domains the JS runtime actually calls at runtime.
+
+---
+
+## Lesson: CSP script-src must include all external JS sources — 2026-03-14
+
+**Bug:** CSP `script-src 'self' 'unsafe-inline'` blocked `https://js.stripe.com/v3/`
+from loading. Stripe Elements silently failed to initialise in production.
+
+**Fix:** Add `'https://js.stripe.com'` to `script-src`. Audit every external JS file
+loaded by the page before finalising the policy.
+
+**Pattern to avoid:** Thinking `frame-src` and `connect-src` are sufficient for Stripe.
+Stripe loads an external script AND iframes AND makes API calls — all three directives
+must include its domains.
+
+---
+
+## Lesson: Role-check the JWT, not just its existence — 2026-03-14
+
+**Bug:** The `/account` route guard checked `!session?.user` but not `session.user.role`.
+A logged-in cleaner or admin could navigate to customer dashboard pages.
+
+**Fix:** Check `session.user.role !== 'customer'` (or the expected role) in addition to
+presence. Each protected route family (`/admin`, `/cleaner`, `/account`) must verify
+the correct role, not just authentication.
+
+**Pattern to avoid:** `if (!session?.user) redirect()` without a role assertion.
+
+---
+
+## Lesson: `__Secure-` cookies require the `secure` attribute when clearing — 2026-03-14
+
+**Bug:** `response.cookies.set('__Secure-authjs.session-token', '', { maxAge: 0 })` was
+silently ignored by the browser on HTTPS. RFC 6265 §4.1.2.5 requires any `Set-Cookie`
+for a `__Secure-` prefixed name to include the `Secure` attribute.
+
+**Fix:** Always include `{ secure: true, httpOnly: true, sameSite: 'lax' }` when setting
+or clearing `__Secure-` cookies.
+
+**Pattern to avoid:** Clearing a `__Secure-` cookie without the `secure` attribute.
+
+---
+
+## Lesson: Stripe webhook 404 prevents retries — 2026-03-14
+
+**Bug:** Returning HTTP 404 when a booking is not found for a Stripe session tells Stripe
+"permanently failed". Stripe only retries on 5xx. A race condition (webhook arriving
+before the booking DB write commits) would leave the booking stuck in PENDING_PAYMENT.
+
+**Fix:** Return 500 (not 404) for booking-not-found in the webhook handler so Stripe
+retries. Alternatively, implement an exponential-backoff retry loop inside the handler.
+
+**Pattern to avoid:** Using 4xx codes for transient states in Stripe webhook handlers.
+
+---
+
+## Lesson: Wrap all DB calls in try/catch in auth-critical routes — 2026-03-14
+
+**Bug:** `resetPasswordWithToken()` was called without a try/catch. A Prisma error would
+propagate as an unhandled exception, leaving the user uncertain whether their password
+was changed. No structured error body was returned.
+
+**Fix:** Wrap every DB call in auth routes in try/catch with a structured 500 response
+and console.error so the failure is logged and the user gets a clear message.
+
+**Pattern to avoid:** Calling async DB functions in route handlers without try/catch when
+the error path leaves user data in an ambiguous state.
+
+---
+
+## Lesson: Token-before-email is the correct order for single-use links — 2026-03-14
+
+**Bug:** `sendReviewInvite` sent the email first, then wrote the token to the DB. If the
+DB write failed after email delivery, the customer received a review link that permanently
+returned "invalid token" — no recovery path.
+
+**Fix:** Write the token to the DB first. If the email subsequently fails, the token is
+safe in the DB and the operation can be retried. An undelivered email with a valid token
+is recoverable; a delivered email with no token is not.
+
+**Pattern to avoid:** Sending a single-use link before persisting the token it references.

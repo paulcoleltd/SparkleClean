@@ -37,7 +37,17 @@ export async function POST(req: NextRequest) {
   }
 
   const { token, password } = parsed.data
-  const ok = await resetPasswordWithToken(token, password)
+
+  let ok: boolean
+  try {
+    ok = await resetPasswordWithToken(token, password)
+  } catch (err) {
+    console.error('[POST /api/account/reset-password] DB error during password reset', { err })
+    return NextResponse.json(
+      { error: { message: 'An error occurred resetting your password. Please try again.', code: 'INTERNAL_ERROR' } },
+      { status: 500 }
+    )
+  }
 
   if (!ok) {
     return NextResponse.json(
