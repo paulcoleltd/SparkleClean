@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 const links = [
@@ -15,7 +15,17 @@ const links = [
 
 export function Navbar() {
   const pathname = usePathname()
-  const [open, setOpen]   = useState(false)
+  const [open, setOpen] = useState(false)
+
+  // Close mobile menu on Escape key (ARIA best practice)
+  useEffect(() => {
+    if (!open) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [open])
 
   return (
     <nav className="bg-white shadow-sm" aria-label="Main navigation">
