@@ -6,7 +6,10 @@ export const metadata = { title: 'Admin — SparkleClean' }
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
-  if (!session?.user) redirect('/admin/login')
+
+  // No session — render children as-is (handles the login page itself)
+  // Middleware protects all other /admin/* routes from unauthenticated access
+  if (!session?.user) return <>{children}</>
 
   async function handleSignOut() {
     'use server'

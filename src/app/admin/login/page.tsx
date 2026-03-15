@@ -1,23 +1,21 @@
-import { signIn, auth } from '../../../../auth'
+import { signIn } from '../../../../auth'
 import { AuthError } from 'next-auth'
 import { redirect } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Admin Login — SparkleClean' }
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; callbackUrl?: string }>
+  searchParams: { error?: string; callbackUrl?: string }
 }) {
-  const session = await auth()
-  if (session?.user) redirect('/admin/bookings')
-
-  const { error, callbackUrl } = await searchParams
+  const { error, callbackUrl } = searchParams
 
   async function login(formData: FormData) {
     'use server'
     try {
-      await signIn('credentials', {
+      await signIn('admin-credentials', {
         email:      formData.get('email'),
         password:   formData.get('password'),
         redirectTo: callbackUrl ?? '/admin/bookings',

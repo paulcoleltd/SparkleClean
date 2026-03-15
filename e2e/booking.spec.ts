@@ -11,11 +11,11 @@ const tomorrow = () => {
 async function fillBookingForm(page: Page) {
   await page.getByLabel('Full Name').fill('Jane Smith')
   await page.getByLabel('Email Address').fill('jane@example.com')
-  await page.getByLabel('Phone Number').fill('(555) 123-4567')
-  await page.getByLabel('Street Address').fill('123 Main Street')
-  await page.getByLabel('City').fill('Springfield')
-  await page.getByLabel('State').fill('IL')
-  await page.getByLabel('ZIP Code').fill('62701')
+  await page.getByLabel('Phone Number').fill('07700 900123')
+  await page.getByLabel('Street Address').fill('123 High Street')
+  await page.getByLabel('City').fill('London')
+  await page.getByLabel('County').fill('Greater London')
+  await page.getByLabel('Postcode').fill('SW1A 1AA')
   await page.getByLabel('Service Type').selectOption('RESIDENTIAL')
   await page.getByLabel('Frequency').selectOption('ONE_TIME')
   await page.getByLabel('Property Size').selectOption('MEDIUM')
@@ -34,18 +34,20 @@ test.describe('Booking flow', () => {
     await expect(page).toHaveTitle(/book a cleaning/i)
     await expect(page.getByRole('heading', { name: /book your cleaning/i })).toBeVisible()
     await expect(page.getByText('Booking Summary')).toBeVisible()
-    await expect(page.getByText('$0')).toBeVisible()
+    await expect(page.getByText('£0')).toBeVisible()
   })
 
   test('price summary updates when service is selected', async ({ page }) => {
     await page.getByLabel('Service Type').selectOption('RESIDENTIAL')
-    await expect(page.getByText('$150')).toBeVisible()
+    // Use exact:true to avoid matching the £150 text inside the <option> element
+    await expect(page.getByText('£150', { exact: true })).toBeVisible()
   })
 
   test('price summary updates when extras are checked', async ({ page }) => {
     await page.getByLabel('Service Type').selectOption('RESIDENTIAL')
     await page.getByLabel(/window cleaning/i).check()
-    await expect(page.getByText('$200')).toBeVisible()
+    // Use exact:true to avoid matching £200 inside the <option> element
+    await expect(page.getByText('£200', { exact: true })).toBeVisible()
   })
 
   test('shows validation error when required name is missing', async ({ page }) => {

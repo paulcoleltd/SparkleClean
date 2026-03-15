@@ -1,0 +1,4 @@
+# Semgrep ignore rules for SparkleClean
+
+# Seed SQL files contain intentional bcrypt hashes for test users — not real secrets
+prisma/supabase-setup.sql
