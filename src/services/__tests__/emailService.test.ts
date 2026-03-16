@@ -52,9 +52,9 @@ describe('sendBookingConfirmation()', () => {
     expect(mockSend.mock.calls[0]![0].to).toBe('customer@test.com')
   })
 
-  it('sends from the SparkleClean bookings address', async () => {
+  it('sends from the SparkleClean sender name', async () => {
     await sendBookingConfirmation(makeBooking())
-    expect(mockSend.mock.calls[0]![0].from).toContain('sparkleclean.com')
+    expect(mockSend.mock.calls[0]![0].from).toContain('SparkleClean')
   })
 
   it('includes the human-readable service label in the subject', async () => {

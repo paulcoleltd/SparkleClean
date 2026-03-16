@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '../../../../../../../auth'
 import { getBookingById } from '@/services/bookingService'
 import { assignBookingToCleaner, getCleanerById } from '@/services/cleanerService'
+import { sendCleanerAssignmentEmail } from '@/services/emailService'
 import { z } from 'zod'
 
 const AssignSchema = z.object({
@@ -51,6 +52,7 @@ export async function POST(
   const { cleanerId } = parsed.data
 
   // Verify the cleaner exists (skip when unassigning)
+  let cleanerName: string | null = null
   if (cleanerId !== null) {
     const cleaner = await getCleanerById(cleanerId)
     if (!cleaner || !cleaner.active) {
@@ -59,8 +61,15 @@ export async function POST(
         { status: 404 }
       )
     }
+    cleanerName = cleaner.name
   }
 
   const updated = await assignBookingToCleaner(id, cleanerId)
+
+  // Notify the cleaner non-blocking (only on assignment, not unassignment)
+  if (cleanerId !== null && cleanerName) {
+    void sendCleanerAssignmentEmail(booking, cleanerName).catch(console.error)
+  }
+
   return NextResponse.json({ data: { id: updated.id, cleanerId: updated.cleanerId } })
 }
