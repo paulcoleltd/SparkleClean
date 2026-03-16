@@ -42,7 +42,7 @@ describe('GET /api/account/referral', () => {
 
   it('returns 401 when not authenticated', async () => {
     vi.mocked(auth).mockResolvedValue(null as never)
-    const res  = await GET(makeRequest() as never)
+    const res  = await GET()
     const body = await res.json()
     expect(res.status).toBe(401)
     expect(body.error.code).toBe('UNAUTHORISED')
@@ -52,7 +52,7 @@ describe('GET /api/account/referral', () => {
     vi.mocked(auth).mockResolvedValue(
       { user: { id: 'admin-1', role: 'admin' } } as never
     )
-    const res = await GET(makeRequest() as never)
+    const res = await GET()
     expect(res.status).toBe(401)
   })
 
@@ -60,7 +60,7 @@ describe('GET /api/account/referral', () => {
     vi.mocked(auth).mockResolvedValue(
       { user: { id: 'cleaner-1', role: 'cleaner' } } as never
     )
-    const res = await GET(makeRequest() as never)
+    const res = await GET()
     expect(res.status).toBe(401)
   })
 
@@ -70,7 +70,7 @@ describe('GET /api/account/referral', () => {
     vi.mocked(auth).mockResolvedValue(
       { user: { id: 'cust-uuid-001', role: 'customer' } } as never
     )
-    const res  = await GET(makeRequest() as never)
+    const res  = await GET()
     const body = await res.json()
     expect(res.status).toBe(200)
     expect(body.data.code).toBe('SC-ABCD1234')
@@ -81,7 +81,7 @@ describe('GET /api/account/referral', () => {
     vi.mocked(auth).mockResolvedValue(
       { user: { id: 'cust-uuid-001', role: 'customer' } } as never
     )
-    await GET(makeRequest() as never)
+    await GET()
     expect(getOrCreateReferralCode).toHaveBeenCalledWith('cust-uuid-001')
   })
 
@@ -90,7 +90,7 @@ describe('GET /api/account/referral', () => {
       { user: { id: 'cust-uuid-001', role: 'customer' } } as never
     )
     vi.mocked(getReferralStats).mockResolvedValue(null)
-    const res  = await GET(makeRequest() as never)
+    const res  = await GET()
     const body = await res.json()
     expect(res.status).toBe(200)
     expect(body.data.uses).toBe(0)

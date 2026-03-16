@@ -1,6 +1,16 @@
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 
-export async function getDashboardStats() {
+// Cross-request cache: dashboard stats are approximate — 60-second TTL is fine.
+// Admin actions that affect counts (confirm booking, publish review, etc.)
+// will trigger a stale view for at most 60 s.
+export const getDashboardStats = unstable_cache(
+  async () => _getDashboardStats(),
+  ['dashboard-stats'],
+  { revalidate: 60, tags: ['dashboard'] }
+)
+
+async function _getDashboardStats() {
   const now       = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
   const weekStart  = new Date(now)

@@ -46,6 +46,10 @@ model Booking {
   referralCodeId String?
   referralCode   ReferralCode? @relation(fields: [referralCodeId], references: [id])
   discountAmount Int           @default(0)  // pence
+  // Promo code — additional staff-issued discount codes
+  promoCodeId    String?
+  promoCode      PromoCode?    @relation(fields: [promoCodeId], references: [id])
+  promoDiscount  Int           @default(0)  // pence
   // Preferences
   marketing        Boolean       @default(false)
   // Audit
@@ -53,6 +57,7 @@ model Booking {
   updatedAt      DateTime      @updatedAt
   deletedAt      DateTime?     // soft delete
   reminderSentAt    DateTime?     // set when 24h reminder email is sent
+  smsReminderSentAt DateTime?     // set when SMS reminder is sent
   reviewToken       String?       @unique  // UUID sent in the review invite email
   reviewInviteSentAt DateTime?    // set when invite email is sent
   review            Review?
@@ -63,6 +68,7 @@ model Booking {
   @@index([recurringScheduleId])
   @@index([cleanerId])
   @@index([referralCodeId])
+  @@index([promoCodeId])
   @@map("bookings")
 }
 
@@ -187,17 +193,64 @@ model Admin {
 // ─── Cleaner (field staff) ─────────────────────────────────────────────────────
 
 model Cleaner {
-  id           String    @id @default(uuid())
-  email        String    @unique @db.VarChar(254)
+  id           String               @id @default(uuid())
+  email        String               @unique @db.VarChar(254)
   passwordHash String
-  name         String    @db.VarChar(100)
-  phone        String?   @db.VarChar(30)
-  active       Boolean   @default(true)
+  name         String               @db.VarChar(100)
+  phone        String?              @db.VarChar(30)
+  active       Boolean              @default(true)
   bookings     Booking[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  availability CleanerAvailability[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
 
   @@map("cleaners")
+}
+
+// ─── Promo Codes ──────────────────────────────────────────────────────────────
+
+model PromoCode {
+  id            String       @id @default(uuid())
+  code          String       @unique @db.VarChar(50)   // e.g. WELCOME20
+  description   String?      @db.VarChar(200)
+  discountType  DiscountType                           // PERCENTAGE or FIXED
+  discountValue Int                                    // basis-points (1500=15%) or pence (2000=£20)
+  maxUses       Int?                                   // null = unlimited
+  uses          Int          @default(0)
+  active        Boolean      @default(true)
+  expiresAt     DateTime?
+  bookings      Booking[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("promo_codes")
+}
+
+// ─── Cleaner Availability ─────────────────────────────────────────────────────
+
+model CleanerAvailability {
+  id        String     @id @default(uuid())
+  cleanerId String
+  cleaner   Cleaner    @relation(fields: [cleanerId], references: [id], onDelete: Cascade)
+  dayOfWeek Int        // 0=Mon … 6=Sun
+  timeSlots TimeSlot[]
+
+  @@unique([cleanerId, dayOfWeek])
+  @@index([cleanerId])
+  @@map("cleaner_availability")
+}
+
+// ─── Service Areas ────────────────────────────────────────────────────────────
+
+model ServiceArea {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(100)   // e.g. "Central London"
+  postcodes   String[]                    // postcode prefixes e.g. ["SW1", "SW1A"]
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("service_areas")
 }
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
@@ -253,4 +306,9 @@ enum ReviewStatus {
   PENDING    // submitted, awaiting admin approval
   PUBLISHED  // visible on site
   REJECTED   // hidden
+}
+
+enum DiscountType {
+  PERCENTAGE   // discountValue = basis points, e.g. 1500 = 15%
+  FIXED        // discountValue = pence, e.g. 2000 = £20
 }

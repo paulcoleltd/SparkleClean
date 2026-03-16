@@ -27,11 +27,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </Link>
             <nav className="flex gap-4 text-sm">
               <Link href="/admin/bookings"  className="text-gray-600 hover:text-gray-900 transition-colors">Bookings</Link>
+              <Link href="/admin/calendar"  className="text-gray-600 hover:text-gray-900 transition-colors">Calendar</Link>
               <Link href="/admin/recurring" className="text-gray-600 hover:text-gray-900 transition-colors">Recurring</Link>
               <Link href="/admin/reviews"   className="text-gray-600 hover:text-gray-900 transition-colors">Reviews</Link>
               <Link href="/admin/messages"  className="text-gray-600 hover:text-gray-900 transition-colors">Messages</Link>
               <Link href="/admin/cleaners"   className="text-gray-600 hover:text-gray-900 transition-colors">Cleaners</Link>
               <Link href="/admin/referrals" className="text-gray-600 hover:text-gray-900 transition-colors">Referrals</Link>
+              <Link href="/admin/promos"    className="text-gray-600 hover:text-gray-900 transition-colors">Promos</Link>
+              <Link href="/admin/service-areas" className="text-gray-600 hover:text-gray-900 transition-colors">Areas</Link>
             </nav>
           </div>
 

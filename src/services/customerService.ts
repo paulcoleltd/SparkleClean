@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs'
+import { cache } from 'react'
 import { prisma } from '@/lib/prisma'
 
 export async function createCustomer(name: string, email: string, password: string) {
@@ -14,7 +15,7 @@ export async function getCustomerByEmail(email: string) {
 }
 
 /** Bookings linked to this customer by email — guest bookings are included */
-export async function getBookingsByEmail(email: string) {
+export const getBookingsByEmail = cache(async (email: string) => {
   return prisma.booking.findMany({
     where:   { email, deletedAt: null },
     orderBy: { scheduledAt: 'desc' },
@@ -25,7 +26,7 @@ export async function getBookingsByEmail(email: string) {
       recurringScheduleId: true,
     },
   })
-}
+})
 
 export async function updateCustomerProfile(
   id: string,
@@ -41,12 +42,14 @@ export async function updateCustomerProfile(
   })
 }
 
-export async function getCustomerById(id: string) {
+// cache() deduplicates calls with the same id within a single render pass.
+// Prevents duplicate DB round-trips when layout + page both need the customer.
+export const getCustomerById = cache(async (id: string) => {
   return prisma.customer.findUnique({
     where:  { id },
     select: { id: true, email: true, name: true, createdAt: true },
   })
-}
+})
 
 export async function verifyCustomerPassword(id: string, password: string): Promise<boolean> {
   const customer = await prisma.customer.findUnique({ where: { id } })

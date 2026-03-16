@@ -28,3 +28,8 @@ test-results/
 next-env.d.ts
 
 .vercel
+
+# Playwright auth state (saved sessions)
+.auth/
+# Local test env override
+.env.test.local

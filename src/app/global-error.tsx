@@ -1,14 +1,14 @@
 'use client'
 
+import { useEffect } from 'react'
+import * as Sentry from '@sentry/nextjs'
+
 /**
  * global-error.tsx — Root-level error boundary for the App Router.
  *
  * Catches errors thrown inside the root layout itself (e.g. a broken Provider,
- * a bad Navbar import, etc.).  Unlike error.tsx this component MUST render its
- * own <html>/<body> because it replaces the entire root layout when it fires.
- *
- * Next.js 14 App Router requires this file to avoid the dev-mode
- * "missing required error components" warning.
+ * a bad Navbar import). Unlike error.tsx this component MUST render its own
+ * <html>/<body> because it replaces the entire root layout when it fires.
  */
 export default function GlobalError({
   error,
@@ -17,6 +17,10 @@ export default function GlobalError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  useEffect(() => {
+    Sentry.captureException(error)
+  }, [error])
+
   return (
     <html lang="en">
       <body style={{ margin: 0, fontFamily: 'system-ui, sans-serif', background: '#f9fafb' }}>

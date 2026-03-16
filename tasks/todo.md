@@ -274,6 +274,25 @@ pnpm add -D prisma @types/bcryptjs typescript @types/node
 
 ---
 
+## FEAT-035: Admin Booking Calendar
+**Status:** Code complete
+
+- [x] Add `getBookingsForDateRange()` + `CalendarBooking` type to `bookingService.ts` — returns bookings in `[from, to)` range, excludes `PENDING_PAYMENT` + soft-deleted, includes cleaner relation
+- [x] Create `GET /api/admin/calendar?from=YYYY-MM-DD&to=YYYY-MM-DD` — admin-only, max 42-day range, returns serialisable `CalendarBooking[]`
+- [x] Create `src/app/admin/calendar/WeekCalendar.tsx` — client component; Monday-based week grid; colour-coded booking cards per cleaner (8-colour palette); status dots; "Today" / prev / next navigation; loading skeletons; cleaner legend
+- [x] Create `src/app/admin/calendar/page.tsx` — server component shell
+- [x] Add "Calendar" nav link to admin layout (between Bookings and Recurring)
+- [x] Fix `global-error.tsx` — `Sentry.captureException(error)` in `useEffect`
+- [x] `src/app/api/admin/calendar/__tests__/route.test.ts` — 10 tests: auth, validation, happy path, date boundary, 42-day limit
+
+### Verify
+- [ ] **YOU DO THIS:** Navigate to `/admin/calendar` — week grid renders, bookings appear as colour-coded cards
+- [ ] **YOU DO THIS:** Click a booking card — navigates to booking detail page
+- [ ] **YOU DO THIS:** Click "Today" / prev / next — week changes correctly
+- [ ] **YOU DO THIS:** Confirm today's column has the green dot indicator
+
+---
+
 ## Backlog (future features)
 
 ---
@@ -670,4 +689,126 @@ In-memory store — replace with Upstash Redis for multi-instance deployments.
 - [ ] Visit `/account/referral` as a logged-in customer → code displayed, copy buttons work
 - [ ] Enter code on `/booking` form → green tick + "10% off" appears in price summary
 - [ ] Complete a booking with a referral code → `discountAmount` saved in Supabase
+
+---
+
+## FEAT-036: SMS Reminders (Twilio)
+**Status:** Complete ✓
+
+### Schema
+- [x] `smsReminderSentAt DateTime?` on `Booking`
+
+### Service layer
+- [x] `src/services/smsService.ts` — `sendReminderSMS()`, `sendBookingConfirmationSMS()` — graceful degradation (returns false if TWILIO_* env vars absent)
+
+### Integration
+- [x] `src/services/reminderService.ts` — calls `sendReminderSMS()` non-blocking; tracks `smsReminderSentAt`
+- [x] `src/app/api/cron/reminders/route.ts` — returns `smsSent` count in response
+
+### Tests
+- [x] `src/services/__tests__/smsService.test.ts` — 2 tests: graceful degradation when Twilio not configured
+
+### Verify (you do this)
+- [ ] Add TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER to `.env.local`
+- [ ] Trigger cron endpoint → check SMS sent to test phone
+- [ ] Without TWILIO_* vars → confirm no crash, smsSent=0 in cron response
+
+---
+
+## FEAT-037: Promo Codes
+**Status:** Complete ✓
+
+### Schema
+- [x] `PromoCode` model: id, code (unique), description, discountType (PERCENTAGE|FIXED), discountValue (basis points or pence), maxUses, uses, active, expiresAt
+- [x] `DiscountType` enum: PERCENTAGE | FIXED
+- [x] `promoCodeId String?` + `promoDiscount Int @default(0)` on `Booking`
+
+### Service layer
+- [x] `src/services/promoService.ts` — `calculatePromoDiscount()`, `validatePromoCode()`, `recordPromoUse()`, `getPromoCodeByCode()`, CRUD functions
+
+### API routes
+- [x] `GET /api/promo/validate?code=&total=` — public, rate-limited 20/hr
+- [x] `GET/POST /api/admin/promos` — admin-only list + create
+- [x] `PATCH/DELETE /api/admin/promos/[id]` — admin-only toggle + delete
+
+### Booking integration
+- [x] `promoCode` field in `CreateBookingSchema`
+- [x] `POST /api/bookings` — validates promo code server-side, applies discount, records use after Stripe session
+- [x] `BookingForm.tsx` — promo code input; on-blur validates; shows green tick + description
+- [x] `PriceSummary.tsx` — teal promo discount line when code validated
+
+### Admin UI
+- [x] `src/app/admin/promos/page.tsx` — promo code list + create form
+- [x] `src/app/admin/promos/CreatePromoForm.tsx` — create new codes
+- [x] `src/app/admin/promos/PromoTable.tsx` — toggle active / delete
+- [x] `src/app/admin/layout.tsx` — "Promos" nav link added
+
+### Tests
+- [x] `src/services/__tests__/promoService.test.ts` — 11 tests: `calculatePromoDiscount` (pure), `validatePromoCode` (mocked Prisma)
+- [x] `src/app/api/promo/validate/__tests__/route.test.ts` — 5 tests: missing params, valid/invalid code, default total
+
+### Verify (you do this)
+- [ ] Visit `/admin/promos` → create a FIXED and a PERCENTAGE code
+- [ ] Enter code on `/booking` form → teal discount line appears in summary
+- [ ] Submit booking with promo code → `promoDiscount` saved in Supabase
+
+---
+
+## FEAT-038: Cleaner Availability
+**Status:** Complete ✓
+
+### Schema
+- [x] `CleanerAvailability` model: id, cleanerId FK, dayOfWeek Int, timeSlots TimeSlot[], @@unique([cleanerId_dayOfWeek])
+- [x] `availability CleanerAvailability[]` on `Cleaner`
+
+### Service layer
+- [x] `src/services/availabilityService.ts` — `getCleanerAvailability()`, `setDayAvailability()`, `setFullAvailability()`, `getAvailableCleaners()`
+
+### API routes
+- [x] `GET/PUT /api/admin/cleaners/[id]/availability` — admin-only
+
+### Cleaner portal
+- [x] `src/app/cleaner/availability/page.tsx` — server component, cleaner-role gated
+- [x] `src/app/cleaner/availability/AvailabilityEditor.tsx` — checkbox grid: 7 days × 3 time slots + save
+- [x] `src/app/cleaner/layout.tsx` — "My Bookings" + "Availability" nav links
+
+### Tests
+- [x] `src/services/__tests__/availabilityService.test.ts` — 6 tests: empty schedule, slot fill, delete on empty, upsert on slots, full replace
+
+### Verify (you do this)
+- [ ] Sign in as a cleaner → visit `/cleaner/availability` → set slots → save
+- [ ] Visit `/admin/cleaners/[id]` → confirm availability shown
+
+---
+
+## FEAT-039: Service Areas
+**Status:** Complete ✓
+
+### Schema
+- [x] `ServiceArea` model: id, name, postcodes String[], active, timestamps
+
+### Service layer
+- [x] `src/services/serviceAreaService.ts` — `normalisePostcode()`, `isPostcodeServiced()`, CRUD functions
+
+### API routes
+- [x] `GET /api/service-areas/check?postcode=` — public, rate-limited 30/hr
+- [x] `GET/POST /api/admin/service-areas` — admin-only
+- [x] `PATCH/DELETE /api/admin/service-areas/[id]` — admin-only
+
+### Booking form integration
+- [x] Postcode field on-blur → calls `/api/service-areas/check` → shows amber warning if not covered (non-blocking)
+
+### Admin UI
+- [x] `src/app/admin/service-areas/page.tsx` — server component
+- [x] `src/app/admin/service-areas/ServiceAreaManager.tsx` — create form + table with toggle/delete
+- [x] `src/app/admin/layout.tsx` — "Areas" nav link added
+
+### Tests
+- [x] `src/services/__tests__/serviceAreaService.test.ts` — 10 tests: `normalisePostcode` (pure), `isPostcodeServiced` (mocked Prisma)
+- [x] `src/app/api/service-areas/check/__tests__/route.test.ts` — 4 tests: missing param, serviced, not serviced, trim
+
+### Verify (you do this)
+- [ ] Run `npx prisma migrate dev --name add-phase3-features`
+- [ ] Visit `/admin/service-areas` → add "London" with postcodes SW1, SW1A, EC1
+- [ ] On `/booking` form, enter a covered postcode → no warning; enter E10 → amber warning appears
 - [ ] Visit `/admin/referrals` → top referrers table renders

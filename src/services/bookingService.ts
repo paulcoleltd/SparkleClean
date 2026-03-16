@@ -85,10 +85,12 @@ export async function createBooking(
   input: CreateBookingInput,
   recurringScheduleId?: string,
   referralCodeId?: string,
-  discountAmount = 0
+  discountAmount = 0,
+  promoCodeId?: string,
+  promoDiscount = 0
 ): Promise<Booking> {
   const baseTotal   = calculateTotal(input.service, input.extras, input.frequency)
-  const total       = Math.max(0, baseTotal - discountAmount)
+  const total       = Math.max(0, baseTotal - discountAmount - promoDiscount)
   const scheduledAt = toScheduledAt(input.date, input.timeSlot)
 
   // Generate a short reference: SC-A1B2C3D4
@@ -120,6 +122,8 @@ export async function createBooking(
       marketing:           input.marketing,
       recurringScheduleId: recurringScheduleId ?? null,
       referralCodeId:      referralCodeId ?? null,
+      promoCodeId:         promoCodeId ?? null,
+      promoDiscount,
     },
   })
 }
@@ -250,4 +254,53 @@ export async function getBookingsByIds(ids: string[]): Promise<Booking[]> {
   return prisma.booking.findMany({
     where: { id: { in: ids }, deletedAt: null },
   })
+}
+
+export interface CalendarBooking {
+  id:          string
+  reference:   string
+  name:        string
+  service:     string
+  timeSlot:    string
+  scheduledAt: string   // ISO string — serialisable for client components
+  status:      string
+  total:       number
+  cleaner:     { id: string; name: string } | null
+}
+
+/**
+ * Return bookings in [from, to) for the admin calendar view.
+ * Excludes soft-deleted and PENDING_PAYMENT bookings.
+ * Ordered by scheduledAt ascending so each day renders chronologically.
+ */
+export async function getBookingsForDateRange(
+  from: Date,
+  to:   Date
+): Promise<CalendarBooking[]> {
+  const rows = await prisma.booking.findMany({
+    where: {
+      deletedAt:   null,
+      status:      { not: 'PENDING_PAYMENT' },
+      scheduledAt: { gte: from, lt: to },
+    },
+    orderBy: { scheduledAt: 'asc' },
+    select: {
+      id:          true,
+      reference:   true,
+      name:        true,
+      service:     true,
+      timeSlot:    true,
+      scheduledAt: true,
+      status:      true,
+      total:       true,
+      cleaner: {
+        select: { id: true, name: true },
+      },
+    },
+  })
+
+  return rows.map(r => ({
+    ...r,
+    scheduledAt: r.scheduledAt.toISOString(),
+  }))
 }
