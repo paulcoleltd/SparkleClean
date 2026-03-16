@@ -83,9 +83,12 @@ export function toScheduledAt(dateString: string, timeSlot: string): Date {
 
 export async function createBooking(
   input: CreateBookingInput,
-  recurringScheduleId?: string
+  recurringScheduleId?: string,
+  referralCodeId?: string,
+  discountAmount = 0
 ): Promise<Booking> {
-  const total       = calculateTotal(input.service, input.extras, input.frequency)
+  const baseTotal   = calculateTotal(input.service, input.extras, input.frequency)
+  const total       = Math.max(0, baseTotal - discountAmount)
   const scheduledAt = toScheduledAt(input.date, input.timeSlot)
 
   // Generate a short reference: SC-A1B2C3D4
@@ -113,8 +116,10 @@ export async function createBooking(
       extras:       input.extras as Extra[],
       notes:               input.notes,
       total,
+      discountAmount,
       marketing:           input.marketing,
       recurringScheduleId: recurringScheduleId ?? null,
+      referralCodeId:      referralCodeId ?? null,
     },
   })
 }

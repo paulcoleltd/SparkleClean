@@ -2,10 +2,12 @@
 
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useState, useTransition } from 'react'
 import { cn } from '@/lib/utils'
 import { CreateBookingSchema, type CreateBookingInput } from '@/types/booking'
 import { useCreateBooking } from './hooks/useCreateBooking'
 import { PriceSummary } from './PriceSummary'
+import { REFERRAL_DISCOUNT_PCT } from '@/services/referralService'
 
 // ─── Today's date as YYYY-MM-DD for the date input min attribute ──────────────
 const todayISO = new Date().toISOString().split('T')[0] as string
@@ -20,13 +22,18 @@ export interface BookingFormPrefill {
   postcode?: string
 }
 
+type RefStatus = 'idle' | 'checking' | 'valid' | 'invalid'
+
 export function BookingForm({ prefill }: { prefill?: BookingFormPrefill }) {
   const { mutate, isPending } = useCreateBooking()
+  const [refStatus, setRefStatus] = useState<RefStatus>('idle')
+  const [, startTransition] = useTransition()
 
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CreateBookingInput>({
     resolver:      zodResolver(CreateBookingSchema),
@@ -34,9 +41,24 @@ export function BookingForm({ prefill }: { prefill?: BookingFormPrefill }) {
   })
 
   // Watch live values for the price summary
-  const [service, frequency, propertySize, timeSlot, date, extras] = watch([
-    'service', 'frequency', 'propertySize', 'timeSlot', 'date', 'extras',
+  const [service, frequency, propertySize, timeSlot, date, extras, referralCode] = watch([
+    'service', 'frequency', 'propertySize', 'timeSlot', 'date', 'extras', 'referralCode',
   ])
+
+  function handleRefCodeBlur(raw: string) {
+    const trimmed = raw.trim().toUpperCase()
+    if (!trimmed) { setRefStatus('idle'); return }
+    setRefStatus('checking')
+    startTransition(async () => {
+      try {
+        const res = await fetch(`/api/referral/validate?code=${encodeURIComponent(trimmed)}`)
+        setRefStatus(res.ok ? 'valid' : 'invalid')
+        if (res.ok) setValue('referralCode', trimmed)
+      } catch {
+        setRefStatus('invalid')
+      }
+    })
+  }
 
   function onSubmit(data: CreateBookingInput) {
     mutate(data, {
@@ -182,6 +204,37 @@ export function BookingForm({ prefill }: { prefill?: BookingFormPrefill }) {
           />
         </Field>
 
+        {/* Referral code */}
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">
+            Referral Code <span className="font-normal text-gray-400">(optional)</span>
+          </label>
+          <input
+            {...register('referralCode')}
+            placeholder="e.g. SC-ABCD1234"
+            onBlur={e => handleRefCodeBlur(e.target.value)}
+            className={cn(
+              input(!!errors.referralCode),
+              refStatus === 'valid'   && 'border-green-400 bg-green-50',
+              refStatus === 'invalid' && 'border-red-400 bg-red-50',
+            )}
+          />
+          {refStatus === 'checking' && (
+            <p className="text-xs text-gray-400">Checking code…</p>
+          )}
+          {refStatus === 'valid' && (
+            <p className="text-xs text-green-600">
+              ✓ Code applied — {REFERRAL_DISCOUNT_PCT}% off (up to £50)
+            </p>
+          )}
+          {refStatus === 'invalid' && (
+            <p className="text-xs text-red-600" role="alert">Invalid referral code</p>
+          )}
+          {errors.referralCode && (
+            <p className="text-xs text-red-600" role="alert">{errors.referralCode.message}</p>
+          )}
+        </div>
+
         {/* Marketing consent */}
         <label className="flex cursor-pointer items-start gap-3">
           <input type="checkbox" {...register('marketing')} className="mt-0.5 h-4 w-4 accent-brand-500" />
@@ -208,6 +261,7 @@ export function BookingForm({ prefill }: { prefill?: BookingFormPrefill }) {
         timeSlot={timeSlot ?? ''}
         date={date ?? ''}
         extras={Array.isArray(extras) ? extras : []}
+        referralApplied={refStatus === 'valid'}
         className="h-fit lg:sticky lg:top-6"
       />
     </div>

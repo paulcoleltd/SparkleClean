@@ -30,7 +30,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Link href="/admin/recurring" className="text-gray-600 hover:text-gray-900 transition-colors">Recurring</Link>
               <Link href="/admin/reviews"   className="text-gray-600 hover:text-gray-900 transition-colors">Reviews</Link>
               <Link href="/admin/messages"  className="text-gray-600 hover:text-gray-900 transition-colors">Messages</Link>
-              <Link href="/admin/cleaners"  className="text-gray-600 hover:text-gray-900 transition-colors">Cleaners</Link>
+              <Link href="/admin/cleaners"   className="text-gray-600 hover:text-gray-900 transition-colors">Cleaners</Link>
+              <Link href="/admin/referrals" className="text-gray-600 hover:text-gray-900 transition-colors">Referrals</Link>
             </nav>
           </div>
 

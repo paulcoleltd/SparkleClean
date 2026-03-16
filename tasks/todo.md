@@ -630,3 +630,44 @@ In-memory store — replace with Upstash Redis for multi-instance deployments.
 - [ ] Go to a booking detail → assign the cleaner from the dropdown → click Save
 - [ ] Sign in at `/cleaner/login` with the cleaner's credentials → bookings page shows the assigned booking
 - [ ] Assign a different booking → sign in as cleaner → both appear in the list
+
+---
+
+## FEAT-034: Referral Programme
+**Status:** Code complete
+
+### Data model (already in schema from prior work)
+- [x] `ReferralCode` model — id, code (unique SC-XXXXXXXX), customerId (unique FK), uses, createdAt
+- [x] `referralCodeId` optional FK on `Booking` + `discountAmount Int @default(0)` (pence)
+
+### Service layer (already built)
+- [x] `src/services/referralService.ts` — `getOrCreateReferralCode()`, `validateReferralCode()`, `recordReferralUse()`, `getReferralStats()`, `calculateReferralDiscount()`, `REFERRAL_DISCOUNT_PCT` (10%), `REFERRAL_DISCOUNT_MAX` (£50)
+
+### API routes
+- [x] `GET /api/account/referral` — customer-only; lazy-creates code; returns code + uses
+- [x] `GET /api/referral/validate?code=` — public, rate-limited (20/hr); validates code, returns `{ valid: true }`
+
+### Booking form integration (already wired in POST /api/bookings)
+- [x] `referralCode` field in `CreateBookingSchema` — optional, trim + uppercase
+- [x] `POST /api/bookings` — validates code server-side, applies discount, records use after Stripe webhook
+
+### Frontend
+- [x] `BookingForm.tsx` — referral code input field; on-blur calls validate endpoint; shows green/red feedback + discount %
+- [x] `PriceSummary.tsx` — purple referral discount line when code validated (10% off, capped at £50)
+- [x] `src/app/account/referral/page.tsx` — shareable code + link, copy buttons, usage stats, how-it-works steps
+- [x] `src/app/account/referral/CopyCodeButton.tsx` — client clipboard component
+- [x] `src/app/account/layout.tsx` — "Refer a Friend" nav link added
+
+### Admin
+- [x] `src/app/admin/referrals/page.tsx` — summary stats (total codes, uses, est. discount given) + top referrers table
+- [x] `src/app/admin/layout.tsx` — "Referrals" nav link added
+
+### Tests
+- [x] `api/account/referral` — 6 tests: 401 cases (no session, admin, cleaner), happy path, getOrCreate called with session id, uses=0 fallback
+- [x] `api/referral/validate` — 5 tests: rate limit, missing code, unknown code, valid code, uppercase normalisation
+
+### Verify (you do this)
+- [ ] Visit `/account/referral` as a logged-in customer → code displayed, copy buttons work
+- [ ] Enter code on `/booking` form → green tick + "10% off" appears in price summary
+- [ ] Complete a booking with a referral code → `discountAmount` saved in Supabase
+- [ ] Visit `/admin/referrals` → top referrers table renders
