@@ -5,7 +5,10 @@ vi.mock('@/services/referralService', () => ({
 }))
 
 vi.mock('@/lib/rateLimiter', () => ({
-  checkRateLimit: vi.fn().mockResolvedValue(false),
+  checkRateLimit:      vi.fn().mockResolvedValue({ allowed: true, remaining: 19, resetInSeconds: 3600 }),
+  rateLimitedResponse: vi.fn().mockReturnValue(
+    new Response(JSON.stringify({ error: { message: 'Too many requests', code: 'RATE_LIMITED' } }), { status: 429 })
+  ),
 }))
 
 import { GET } from '../route'
@@ -26,13 +29,13 @@ function makeRequest(code?: string) {
 describe('GET /api/referral/validate', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(checkRateLimit).mockResolvedValue(false as never)
+    vi.mocked(checkRateLimit).mockResolvedValue({ allowed: true, remaining: 19, resetInSeconds: 3600 } as never)
   })
 
   // ─── Rate limit ──────────────────────────────────────────────────────────────
 
   it('returns 429 when rate limited', async () => {
-    vi.mocked(checkRateLimit).mockResolvedValue(true as never)
+    vi.mocked(checkRateLimit).mockResolvedValue({ allowed: false, remaining: 0, resetInSeconds: 3600 } as never)
     const res = await GET(makeRequest('SC-ABCD1234') as never)
     expect(res.status).toBe(429)
   })

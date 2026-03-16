@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateReferralCode } from '@/services/referralService'
-import { checkRateLimit } from '@/lib/rateLimiter'
+import { checkRateLimit, rateLimitedResponse } from '@/lib/rateLimiter'
 
 export async function GET(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for') ?? 'unknown'
-  const limited = await checkRateLimit(`referral-validate:${ip}`, 20, 3600)
-  if (limited) {
-    return NextResponse.json(
-      { error: { message: 'Too many requests', code: 'RATE_LIMITED' } },
-      { status: 429 }
-    )
-  }
+  const rl = await checkRateLimit(req, 20, 60 * 60 * 1000)
+  if (!rl.allowed) return rateLimitedResponse(rl)
 
   const { searchParams } = new URL(req.url)
   const code = searchParams.get('code')?.trim().toUpperCase()

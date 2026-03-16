@@ -1,4 +1,4 @@
-import { auth } from '../../../auth'
+import { auth } from '../../../../auth'
 import { redirect } from 'next/navigation'
 import { getOrCreateReferralCode, getReferralStats, REFERRAL_DISCOUNT_PCT } from '@/services/referralService'
 import { CopyCodeButton } from './CopyCodeButton'
