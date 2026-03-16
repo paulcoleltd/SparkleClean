@@ -33,3 +33,6 @@ next-env.d.ts
 .auth/
 # Local test env override
 .env.test.local
+
+# Claude Code session data
+.claude/
