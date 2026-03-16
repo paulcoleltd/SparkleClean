@@ -41,26 +41,26 @@ test.describe('Mobile navigation', () => {
     const desktopLinks = page.locator('nav ul.hidden')
     await expect(desktopLinks).toBeHidden()
 
-    // Open menu
+    // Open menu — scope to nav to avoid strict mode violation with footer link
     await page.getByRole('button', { name: /open menu/i }).click()
-    await expect(page.getByRole('link', { name: 'Services' })).toBeVisible()
+    await expect(page.getByRole('navigation').getByRole('link', { name: 'Services' })).toBeVisible()
 
     // Close with same button
     await page.getByRole('button', { name: /close menu/i }).click()
-    await expect(page.getByRole('link', { name: 'Services' })).toBeHidden()
+    await expect(page.getByRole('navigation').getByRole('link', { name: 'Services' })).toBeHidden()
   })
 
   test('clicking a nav link closes the mobile menu', async ({ page }) => {
     await page.goto('/')
     await page.getByRole('button', { name: /open menu/i }).click()
-    await page.getByRole('link', { name: 'Services' }).click()
+    await page.getByRole('navigation').getByRole('link', { name: 'Services' }).click()
     await expect(page).toHaveURL('/services')
   })
 
   test('Escape key closes the mobile menu', async ({ page }) => {
     await page.goto('/')
     await page.getByRole('button', { name: /open menu/i }).click()
-    await expect(page.getByRole('link', { name: 'Services' })).toBeVisible()
+    await expect(page.getByRole('navigation').getByRole('link', { name: 'Services' })).toBeVisible()
     await page.keyboard.press('Escape')
     // After escape the menu should not be expanded
     await expect(page.getByRole('button', { name: /open menu/i })).toBeVisible()

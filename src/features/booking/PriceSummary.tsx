@@ -6,29 +6,33 @@ import {
   TIME_LABELS, EXTRA_LABELS,
 } from '@/types/booking'
 import { calculateTotal, calculateDiscount, FREQUENCY_DISCOUNTS } from '@/services/bookingService'
+import { calculateReferralDiscount, REFERRAL_DISCOUNT_PCT } from '@/services/referralService'
 
 // Re-export calculateTotal so the form can use it client-side for display only.
 // The server always recalculates — this is display-only.
 export { calculateTotal }
 
 interface PriceSummaryProps {
-  service:      string
-  frequency:    string
-  propertySize: string
-  timeSlot:     string
-  date:         string
-  extras:       string[]
-  className?:   string
+  service:          string
+  frequency:        string
+  propertySize:     string
+  timeSlot:         string
+  date:             string
+  extras:           string[]
+  referralApplied?: boolean
+  className?:       string
 }
 
 export function PriceSummary({
-  service, frequency, propertySize, timeSlot, date, extras, className,
+  service, frequency, propertySize, timeSlot, date, extras, referralApplied, className,
 }: PriceSummaryProps) {
-  const hasService   = Boolean(service)
-  const subtotal     = hasService ? calculateTotal(service, extras, 'ONE_TIME') : 0
-  const discountRate = FREQUENCY_DISCOUNTS[frequency] ?? 0
-  const discount     = hasService && discountRate > 0 ? calculateDiscount(service, extras, frequency) : 0
-  const total        = subtotal - discount
+  const hasService     = Boolean(service)
+  const subtotal       = hasService ? calculateTotal(service, extras, 'ONE_TIME') : 0
+  const discountRate   = FREQUENCY_DISCOUNTS[frequency] ?? 0
+  const discount       = hasService && discountRate > 0 ? calculateDiscount(service, extras, frequency) : 0
+  const afterFrequency = subtotal - discount
+  const referralDiscount = referralApplied && hasService ? calculateReferralDiscount(afterFrequency) : 0
+  const total          = afterFrequency - referralDiscount
 
   return (
     <div className={cn('rounded-lg border border-brand-200 bg-brand-50 p-5', className)}>
@@ -80,6 +84,15 @@ export function PriceSummary({
             {total > 0 ? `£${formatPrice(total)}` : '£0'}
           </span>
         </div>
+        {referralDiscount > 0 && (
+          <div className="flex items-center justify-between text-sm font-medium text-purple-700">
+            <span>
+              {REFERRAL_DISCOUNT_PCT}% referral discount
+            </span>
+            <span>−£{formatPrice(referralDiscount)}</span>
+          </div>
+        )}
+
         <p className="text-xs text-gray-400">
           Final price confirmed on booking.
         </p>

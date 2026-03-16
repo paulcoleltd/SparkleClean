@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs'
+import { cache } from 'react'
 import { prisma } from '@/lib/prisma'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -14,17 +15,19 @@ export interface CleanerRow {
 
 // ─── Cleaner CRUD ─────────────────────────────────────────────────────────────
 
-export async function getCleaners(): Promise<CleanerRow[]> {
+// cache() deduplicates within a single render — prevents double queries when
+// both the cleaners list page and a booking detail page are rendered together.
+export const getCleaners = cache(async (): Promise<CleanerRow[]> => {
   return prisma.cleaner.findMany({
     where:   { active: true },
     orderBy: { name: 'asc' },
     select:  { id: true, name: true, email: true, phone: true, active: true, createdAt: true },
   })
-}
+})
 
-export async function getCleanerById(id: string) {
+export const getCleanerById = cache(async (id: string) => {
   return prisma.cleaner.findUnique({ where: { id } })
-}
+})
 
 export async function getCleanerByEmail(email: string) {
   return prisma.cleaner.findUnique({ where: { email } })
