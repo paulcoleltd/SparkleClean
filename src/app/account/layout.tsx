@@ -28,6 +28,9 @@ export default async function AccountLayout({ children }: { children: React.Reac
             <Link href="/account/profile" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
               Profile
             </Link>
+            <Link href="/account/referral" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+              Refer a Friend
+            </Link>
           </div>
           <div className="flex items-center gap-4 text-sm">
             <span className="text-gray-500 hidden sm:block">{session.user.name ?? session.user.email}</span>

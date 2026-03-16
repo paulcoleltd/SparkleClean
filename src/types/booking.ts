@@ -46,9 +46,10 @@ export const CreateBookingSchema = z.object({
   }),
 
   // Optional
-  extras:    z.array(z.enum(['WINDOWS', 'CARPETS', 'LAUNDRY', 'ORGANIZATION'])).default([]),
-  notes:     z.string().max(500).optional(),
-  marketing: z.boolean().default(false),
+  extras:       z.array(z.enum(['WINDOWS', 'CARPETS', 'LAUNDRY', 'ORGANIZATION'])).default([]),
+  notes:        z.string().max(500).optional(),
+  marketing:    z.boolean().default(false),
+  referralCode: z.string().max(20).optional(),
 }).strict()
 
 export type CreateBookingInput = z.infer<typeof CreateBookingSchema>

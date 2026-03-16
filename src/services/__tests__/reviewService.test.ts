@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+// next/cache requires a Next.js server context — mock it for unit tests
+vi.mock('next/cache', () => ({
+  unstable_cache: (fn: unknown) => fn,   // pass-through: no caching in tests
+  revalidateTag:  vi.fn(),
+}))
+
 // Mock Resend and Prisma so the module loads without credentials
 vi.mock('resend', () => ({ Resend: vi.fn().mockImplementation(() => ({})) }))
 vi.mock('@/lib/prisma', () => ({
