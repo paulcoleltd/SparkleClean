@@ -16,8 +16,19 @@ const getResend = (() => {
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev'
 const FROM = `SparkleClean <${FROM_EMAIL}>`
-// In dev, override recipient so emails always land in a real inbox
-const devTo = (to: string) => process.env.RESEND_DEV_TO ?? to
+
+/**
+ * Override recipient(s) in development.
+ * RESEND_DEV_TO supports a single address or a comma-separated list,
+ * e.g. "alice@gmail.com,bob@gmail.com"
+ * When set, ALL outgoing emails are redirected — useful for testing
+ * without a verified sending domain.
+ */
+const devTo = (to: string): string | string[] => {
+  if (!process.env.RESEND_DEV_TO) return to
+  const addrs = process.env.RESEND_DEV_TO.split(',').map(a => a.trim()).filter(Boolean)
+  return addrs.length === 1 ? (addrs[0] as string) : addrs
+}
 
 export async function sendBookingConfirmation(booking: Booking): Promise<void> {
   const subject = [

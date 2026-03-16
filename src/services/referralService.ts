@@ -1,4 +1,13 @@
 import { prisma } from '@/lib/prisma'
+import { LRUCache } from '@/lib/lruCache'
+
+// ─── Referral code LRU cache ──────────────────────────────────────────────────
+// Codes are static once created. Cache up to 500 codes for 10 minutes.
+// Prevents a DB round-trip on every booking-form blur validation.
+
+type CachedCode = { id: string; customerId: string; code: string } | null
+
+const codeCache = new LRUCache<string, CachedCode>({ maxSize: 500, ttlMs: 10 * 60_000 })
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -47,13 +56,19 @@ export async function getOrCreateReferralCode(customerId: string) {
 /**
  * Validate a referral code.  Returns the code record or null if not found.
  * Normalises the input (trim + uppercase) before querying.
+ * Results are cached in-process for 10 minutes to avoid repeated DB hits.
  */
 export async function validateReferralCode(raw: string) {
-  const code = raw.trim().toUpperCase()
-  return prisma.referralCode.findUnique({
+  const code    = raw.trim().toUpperCase()
+  const cached  = codeCache.get(code)
+  if (cached !== undefined) return cached   // null is a valid cached "not found"
+
+  const record = await prisma.referralCode.findUnique({
     where:  { code },
     select: { id: true, customerId: true, code: true },
   })
+  codeCache.set(code, record)
+  return record
 }
 
 /** Increment the use counter after a booking is confirmed. */

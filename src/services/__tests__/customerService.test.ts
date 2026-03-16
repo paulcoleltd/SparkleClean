@@ -1,4 +1,11 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+
+// React's cache() is a no-op in node test environment
+vi.mock('react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react')>()
+  return { ...actual, cache: (fn: (...args: unknown[]) => unknown) => fn }
+})
+
 import { canCustomerCancel } from '../customerService'
 
 // canCustomerCancel is a pure function — no Prisma, no mocking needed.

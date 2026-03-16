@@ -6,8 +6,9 @@ import { useState, useTransition } from 'react'
 import { cn } from '@/lib/utils'
 import { CreateBookingSchema, type CreateBookingInput } from '@/types/booking'
 import { useCreateBooking } from './hooks/useCreateBooking'
-import { PriceSummary } from './PriceSummary'
-import { REFERRAL_DISCOUNT_PCT } from '@/services/referralService'
+import { PriceSummary, calculateTotal } from './PriceSummary'
+import { REFERRAL_DISCOUNT_PCT, calculateReferralDiscount } from '@/services/referralService'
+import { FREQUENCY_DISCOUNTS, calculateDiscount } from '@/services/bookingService'
 
 // ─── Today's date as YYYY-MM-DD for the date input min attribute ──────────────
 const todayISO = new Date().toISOString().split('T')[0] as string
@@ -22,11 +23,15 @@ export interface BookingFormPrefill {
   postcode?: string
 }
 
-type RefStatus = 'idle' | 'checking' | 'valid' | 'invalid'
+type CodeStatus = 'idle' | 'checking' | 'valid' | 'invalid'
 
 export function BookingForm({ prefill }: { prefill?: BookingFormPrefill }) {
   const { mutate, isPending } = useCreateBooking()
-  const [refStatus, setRefStatus] = useState<RefStatus>('idle')
+  const [refStatus,   setRefStatus]   = useState<CodeStatus>('idle')
+  const [promoStatus, setPromoStatus] = useState<CodeStatus>('idle')
+  const [promoDiscountPence, setPromoDiscountPence] = useState(0)
+  const [promoDescription,   setPromoDescription]   = useState('')
+  const [postcodeWarning,    setPostcodeWarning]     = useState<string | null>(null)
   const [, startTransition] = useTransition()
 
   const {
@@ -45,6 +50,17 @@ export function BookingForm({ prefill }: { prefill?: BookingFormPrefill }) {
     'service', 'frequency', 'propertySize', 'timeSlot', 'date', 'extras', 'referralCode',
   ])
 
+  // Client-side total (display-only — server always recalculates)
+  const displayTotal = (() => {
+    if (!service) return 0
+    const sub       = calculateTotal(service, Array.isArray(extras) ? extras : [], 'ONE_TIME')
+    const discRate  = FREQUENCY_DISCOUNTS[frequency] ?? 0
+    const freqDisc  = discRate > 0 ? calculateDiscount(service, Array.isArray(extras) ? extras : [], frequency) : 0
+    const afterFreq = sub - freqDisc
+    const refDisc   = refStatus === 'valid' ? calculateReferralDiscount(afterFreq) : 0
+    return Math.max(0, afterFreq - refDisc)
+  })()
+
   function handleRefCodeBlur(raw: string) {
     const trimmed = raw.trim().toUpperCase()
     if (!trimmed) { setRefStatus('idle'); return }
@@ -56,6 +72,54 @@ export function BookingForm({ prefill }: { prefill?: BookingFormPrefill }) {
         if (res.ok) setValue('referralCode', trimmed)
       } catch {
         setRefStatus('invalid')
+      }
+    })
+  }
+
+  function handlePromoCodeBlur(raw: string) {
+    const trimmed = raw.trim().toUpperCase()
+    if (!trimmed) { setPromoStatus('idle'); setPromoDiscountPence(0); setPromoDescription(''); return }
+    setPromoStatus('checking')
+    startTransition(async () => {
+      try {
+        const res = await fetch(
+          `/api/promo/validate?code=${encodeURIComponent(trimmed)}&total=${displayTotal}`
+        )
+        if (res.ok) {
+          const json = await res.json() as { valid: boolean; discountPence?: number; description?: string }
+          if (json.valid) {
+            setPromoStatus('valid')
+            setPromoDiscountPence(json.discountPence ?? 0)
+            setPromoDescription(json.description ?? '')
+            setValue('promoCode', trimmed)
+          } else {
+            setPromoStatus('invalid')
+            setPromoDiscountPence(0)
+            setPromoDescription('')
+          }
+        } else {
+          setPromoStatus('invalid')
+          setPromoDiscountPence(0)
+          setPromoDescription('')
+        }
+      } catch {
+        setPromoStatus('invalid')
+      }
+    })
+  }
+
+  function handlePostcodeBlur(raw: string) {
+    const trimmed = raw.trim()
+    if (!trimmed) { setPostcodeWarning(null); return }
+    startTransition(async () => {
+      try {
+        const res = await fetch(`/api/service-areas/check?postcode=${encodeURIComponent(trimmed)}`)
+        if (res.ok) {
+          const json = await res.json() as { serviced: boolean; areaName?: string }
+          setPostcodeWarning(json.serviced ? null : "We may not cover this postcode \u2014 we'll confirm after booking.")
+        }
+      } catch {
+        // Network error — don't block the form
       }
     })
   }
@@ -109,7 +173,15 @@ export function BookingForm({ prefill }: { prefill?: BookingFormPrefill }) {
               <input {...register('county')} placeholder="Greater London" className={input(!!errors.county)} />
             </Field>
             <Field label="Postcode" error={errors.postcode?.message} required>
-              <input {...register('postcode')} placeholder="SW1A 1AA" className={input(!!errors.postcode)} />
+              <input
+                {...register('postcode')}
+                placeholder="SW1A 1AA"
+                className={input(!!errors.postcode)}
+                onBlur={e => handlePostcodeBlur(e.target.value)}
+              />
+              {postcodeWarning && (
+                <p className="mt-1 text-xs text-amber-600" role="alert">⚠ {postcodeWarning}</p>
+              )}
             </Field>
           </div>
         </fieldset>
@@ -235,6 +307,32 @@ export function BookingForm({ prefill }: { prefill?: BookingFormPrefill }) {
           )}
         </div>
 
+        {/* Promo code */}
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">
+            Promo Code <span className="font-normal text-gray-400">(optional)</span>
+          </label>
+          <input
+            {...register('promoCode')}
+            placeholder="e.g. SUMMER20"
+            onBlur={e => handlePromoCodeBlur(e.target.value)}
+            className={cn(
+              input(!!errors.promoCode),
+              promoStatus === 'valid'   && 'border-green-400 bg-green-50',
+              promoStatus === 'invalid' && 'border-red-400 bg-red-50',
+            )}
+          />
+          {promoStatus === 'checking' && (
+            <p className="text-xs text-gray-400">Checking code…</p>
+          )}
+          {promoStatus === 'valid' && (
+            <p className="text-xs text-green-600">✓ {promoDescription}</p>
+          )}
+          {promoStatus === 'invalid' && (
+            <p className="text-xs text-red-600" role="alert">Invalid or expired promo code</p>
+          )}
+        </div>
+
         {/* Marketing consent */}
         <label className="flex cursor-pointer items-start gap-3">
           <input type="checkbox" {...register('marketing')} className="mt-0.5 h-4 w-4 accent-brand-500" />
@@ -262,6 +360,8 @@ export function BookingForm({ prefill }: { prefill?: BookingFormPrefill }) {
         date={date ?? ''}
         extras={Array.isArray(extras) ? extras : []}
         referralApplied={refStatus === 'valid'}
+        promoDiscountPence={promoStatus === 'valid' ? promoDiscountPence : 0}
+        promoDescription={promoStatus === 'valid' ? promoDescription : undefined}
         className="h-fit lg:sticky lg:top-6"
       />
     </div>

@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ── Stable mock refs (must be hoisted before vi.mock factories run) ──────────
-const mockSend = vi.hoisted(() => vi.fn().mockResolvedValue({ id: 'email-id' }))
+const mockSend    = vi.hoisted(() => vi.fn().mockResolvedValue({ id: 'email-id' }))
+const mockUpdate  = vi.hoisted(() => vi.fn().mockResolvedValue({}))
+const mockSmsSend = vi.hoisted(() => vi.fn().mockResolvedValue(false))
 
 vi.mock('resend', () => ({
   Resend: vi.fn().mockImplementation(() => ({
@@ -22,6 +24,14 @@ vi.mock('../bookingService', () => ({
   markReminderSent:       vi.fn(),
 }))
 
+vi.mock('@/lib/prisma', () => ({
+  prisma: { booking: { update: mockUpdate } },
+}))
+
+vi.mock('../smsService', () => ({
+  sendReminderSMS: mockSmsSend,
+}))
+
 import { sendTomorrowReminders } from '../reminderService'
 import { getBookingsForReminder, markReminderSent } from '../bookingService'
 
@@ -37,6 +47,8 @@ describe('sendTomorrowReminders()', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockSend.mockResolvedValue({ id: 'email-id' })
+    mockUpdate.mockResolvedValue({})
+    mockSmsSend.mockResolvedValue(false)
     vi.mocked(getBookingsForReminder).mockResolvedValue([])
     vi.mocked(markReminderSent).mockResolvedValue(undefined as never)
   })
@@ -45,13 +57,15 @@ describe('sendTomorrowReminders()', () => {
 
   it('returns zero counts when no bookings need reminders', async () => {
     const result = await sendTomorrowReminders()
-    expect(result).toEqual({ sent: 0, failed: 0, errors: [] })
+    expect(result.sent).toBe(0)
+    expect(result.failed).toBe(0)
+    expect(result.errors).toHaveLength(0)
     expect(mockSend).not.toHaveBeenCalled()
   })
 
   // ─── Happy path ────────────────────────────────────────────────────────────
 
-  it('sends one email per booking and marks each as sent', async () => {
+  it('sends one email per booking and updates each as sent', async () => {
     vi.mocked(getBookingsForReminder).mockResolvedValue([
       makeBooking('booking-1'),
       makeBooking('booking-2'),
@@ -63,13 +77,15 @@ describe('sendTomorrowReminders()', () => {
     expect(result.failed).toBe(0)
     expect(result.errors).toHaveLength(0)
     expect(mockSend).toHaveBeenCalledTimes(2)
-    expect(markReminderSent).toHaveBeenCalledTimes(2)
+    expect(mockUpdate).toHaveBeenCalledTimes(2)
   })
 
-  it('marks the correct booking id as sent after successful email', async () => {
+  it('updates the correct booking id as sent after successful email', async () => {
     vi.mocked(getBookingsForReminder).mockResolvedValue([makeBooking('booking-abc')] as never)
     await sendTomorrowReminders()
-    expect(markReminderSent).toHaveBeenCalledWith('booking-abc')
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'booking-abc' } })
+    )
   })
 
   // ─── Resilience: one failure doesn't stop the rest ─────────────────────────
@@ -92,16 +108,16 @@ describe('sendTomorrowReminders()', () => {
     expect(result.failed).toBe(1)
     expect(result.errors).toHaveLength(1)
     expect(result.errors[0]).toContain('booking-fail')
-    expect(markReminderSent).toHaveBeenCalledTimes(2)
+    expect(mockUpdate).toHaveBeenCalledTimes(2)
   })
 
-  it('does not mark a booking as sent when email fails', async () => {
+  it('does not update a booking as sent when email fails', async () => {
     vi.mocked(getBookingsForReminder).mockResolvedValue([makeBooking('booking-fail')] as never)
     mockSend.mockRejectedValueOnce(new Error('SMTP timeout'))
 
     await sendTomorrowReminders()
 
-    expect(markReminderSent).not.toHaveBeenCalled()
+    expect(mockUpdate).not.toHaveBeenCalled()
   })
 
   it('accumulates all errors when multiple bookings fail', async () => {

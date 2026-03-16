@@ -1,0 +1,31 @@
+version: '3.9'
+
+# ─── Local development / E2E testing database ────────────────────────────────
+# Run:  docker compose up -d
+# Stop: docker compose down
+# Wipe: docker compose down -v   (removes the postgres_data volume)
+#
+# The test database runs on port 5433 to avoid clashing with any local
+# PostgreSQL instance you might have running on the default port 5432.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sparkleclean_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     sparkle
+      POSTGRES_PASSWORD: sparkle
+      POSTGRES_DB:       sparkleclean
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sparkle -d sparkleclean"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

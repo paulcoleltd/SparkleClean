@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+vi.mock('next/cache', () => ({
+  unstable_cache: (fn: unknown) => fn,
+  revalidateTag:  vi.fn(),
+}))
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     booking:          { count: vi.fn(), aggregate: vi.fn(), findMany: vi.fn() },

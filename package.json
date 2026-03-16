@@ -8,12 +8,17 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
+    "test:run": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -35,6 +40,7 @@
     "resend": "^4.0.0",
     "stripe": "^17.0.0",
     "tailwind-merge": "^2.5.3",
+    "twilio": "^5.13.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

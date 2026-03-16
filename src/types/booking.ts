@@ -50,6 +50,7 @@ export const CreateBookingSchema = z.object({
   notes:        z.string().max(500).optional(),
   marketing:    z.boolean().default(false),
   referralCode: z.string().trim().toUpperCase().max(20).optional(),
+  promoCode:    z.string().trim().toUpperCase().max(30).optional(),
 }).strict()
 
 export type CreateBookingInput = z.infer<typeof CreateBookingSchema>

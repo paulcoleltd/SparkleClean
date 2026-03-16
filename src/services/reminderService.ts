@@ -1,7 +1,9 @@
 import { Resend } from 'resend'
 import { render } from '@react-email/components'
 import { getBookingsForReminder, markReminderSent } from './bookingService'
+import { sendReminderSMS } from './smsService'
 import BookingReminder from '@/emails/BookingReminder'
+import { prisma } from '@/lib/prisma'
 
 const getResend = (() => {
   let client: Resend | null = null
@@ -9,18 +11,20 @@ const getResend = (() => {
 })()
 
 interface ReminderResult {
-  sent:   number
-  failed: number
-  errors: string[]
+  sent:        number
+  failed:      number
+  smsSent:     number
+  errors:      string[]
 }
 
 /**
- * Find all CONFIRMED bookings scheduled for tomorrow and send a reminder email.
+ * Find all CONFIRMED bookings scheduled for tomorrow and send a reminder email
+ * + SMS (if Twilio is configured).
  * Each booking is processed independently — one failure does not stop the others.
  */
 export async function sendTomorrowReminders(): Promise<ReminderResult> {
   const bookings = await getBookingsForReminder()
-  const result: ReminderResult = { sent: 0, failed: 0, errors: [] }
+  const result: ReminderResult = { sent: 0, failed: 0, smsSent: 0, errors: [] }
 
   for (const booking of bookings) {
     try {
@@ -33,8 +37,22 @@ export async function sendTomorrowReminders(): Promise<ReminderResult> {
         html,
       })
 
-      await markReminderSent(booking.id)
+      // Fire SMS non-blocking — SMS failure should not prevent email stamp
+      const smsSent = await sendReminderSMS(booking).catch(e => {
+        console.error('[reminderService] SMS failed for', booking.id, e)
+        return false
+      })
+
+      await prisma.booking.update({
+        where: { id: booking.id },
+        data:  {
+          reminderSentAt:    new Date(),
+          smsReminderSentAt: smsSent ? new Date() : undefined,
+        },
+      })
+
       result.sent++
+      if (smsSent) result.smsSent++
     } catch (err) {
       result.failed++
       result.errors.push(`${booking.id}: ${err instanceof Error ? err.message : String(err)}`)

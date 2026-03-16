@@ -1,3 +1,4 @@
+import { unstable_cache, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { Resend } from 'resend'
 import { render } from '@react-email/components'
@@ -80,17 +81,23 @@ export async function submitReview(
 
 // ─── Display ──────────────────────────────────────────────────────────────────
 
-export async function getPublishedReviews(limit = 6) {
-  return prisma.review.findMany({
-    where:   { status: 'PUBLISHED' },
-    orderBy: { createdAt: 'desc' },
-    take:    limit,
-    select: {
-      id: true, name: true, service: true,
-      rating: true, title: true, body: true, createdAt: true,
-    },
-  })
-}
+// Cross-request cache: published reviews rarely change, 5-min TTL is safe.
+// Tag 'reviews' so admin publish/reject actions can revalidate instantly.
+export const getPublishedReviews = unstable_cache(
+  async (limit = 6) => {
+    return prisma.review.findMany({
+      where:   { status: 'PUBLISHED' },
+      orderBy: { createdAt: 'desc' },
+      take:    limit,
+      select: {
+        id: true, name: true, service: true,
+        rating: true, title: true, body: true, createdAt: true,
+      },
+    })
+  },
+  ['published-reviews'],
+  { revalidate: 300, tags: ['reviews'] }   // 5 min TTL
+)
 
 // ─── Admin ────────────────────────────────────────────────────────────────────
 
@@ -114,5 +121,9 @@ export async function getReviews(options: { page?: number; status?: ReviewStatus
 }
 
 export async function updateReviewStatus(id: string, status: 'PUBLISHED' | 'REJECTED') {
-  return prisma.review.update({ where: { id }, data: { status } })
+  const review = await prisma.review.update({ where: { id }, data: { status } })
+  // Bust the published-reviews cache so the homepage reflects the change immediately.
+  // Guard: revalidateTag requires a Next.js server context and throws outside one (tests).
+  try { revalidateTag('reviews') } catch { /* no-op outside Next.js render context */ }
+  return review
 }

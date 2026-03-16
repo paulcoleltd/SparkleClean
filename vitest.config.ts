@@ -9,7 +9,7 @@ export default defineConfig({
     environment: 'node',
     globals:     true,
     setupFiles:  ['./src/test/setup.ts'],
-    exclude:     ['**/node_modules/**', '**/e2e/**'],
+    exclude:     ['**/node_modules/**', '**/e2e/**', '**/.claude/worktrees/**'],
     environmentOptions: {
       jsdom: { url: 'http://localhost:3000' },
     },

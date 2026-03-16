@@ -23,7 +23,7 @@ describe('GET /api/cron/reminders', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.stubEnv('CRON_SECRET', CRON_SECRET)
-    vi.mocked(sendTomorrowReminders).mockResolvedValue({ sent: 3, failed: 0, errors: [] })
+    vi.mocked(sendTomorrowReminders).mockResolvedValue({ sent: 3, failed: 0, smsSent: 0, errors: [] })
   })
 
   afterEach(() => {
@@ -69,7 +69,7 @@ describe('GET /api/cron/reminders', () => {
 
   it('includes errors array in response when some reminders failed', async () => {
     vi.mocked(sendTomorrowReminders).mockResolvedValueOnce({
-      sent: 1, failed: 1, errors: ['booking-id-x: email failed'],
+      sent: 1, failed: 1, smsSent: 0, errors: ['booking-id-x: email failed'],
     })
     const res  = await GET(makeRequest(`Bearer ${CRON_SECRET}`) as never)
     const body = await res.json()

@@ -13,18 +13,21 @@ import { calculateReferralDiscount, REFERRAL_DISCOUNT_PCT } from '@/services/ref
 export { calculateTotal }
 
 interface PriceSummaryProps {
-  service:          string
-  frequency:        string
-  propertySize:     string
-  timeSlot:         string
-  date:             string
-  extras:           string[]
-  referralApplied?: boolean
-  className?:       string
+  service:              string
+  frequency:            string
+  propertySize:         string
+  timeSlot:             string
+  date:                 string
+  extras:               string[]
+  referralApplied?:     boolean
+  promoDiscountPence?:  number
+  promoDescription?:    string
+  className?:           string
 }
 
 export function PriceSummary({
-  service, frequency, propertySize, timeSlot, date, extras, referralApplied, className,
+  service, frequency, propertySize, timeSlot, date, extras,
+  referralApplied, promoDiscountPence = 0, promoDescription, className,
 }: PriceSummaryProps) {
   const hasService     = Boolean(service)
   const subtotal       = hasService ? calculateTotal(service, extras, 'ONE_TIME') : 0
@@ -32,7 +35,7 @@ export function PriceSummary({
   const discount       = hasService && discountRate > 0 ? calculateDiscount(service, extras, frequency) : 0
   const afterFrequency = subtotal - discount
   const referralDiscount = referralApplied && hasService ? calculateReferralDiscount(afterFrequency) : 0
-  const total          = afterFrequency - referralDiscount
+  const total          = Math.max(0, afterFrequency - referralDiscount - promoDiscountPence)
 
   return (
     <div className={cn('rounded-lg border border-brand-200 bg-brand-50 p-5', className)}>
@@ -86,10 +89,14 @@ export function PriceSummary({
         </div>
         {referralDiscount > 0 && (
           <div className="flex items-center justify-between text-sm font-medium text-purple-700">
-            <span>
-              {REFERRAL_DISCOUNT_PCT}% referral discount
-            </span>
+            <span>{REFERRAL_DISCOUNT_PCT}% referral discount</span>
             <span>−£{formatPrice(referralDiscount)}</span>
+          </div>
+        )}
+        {promoDiscountPence > 0 && (
+          <div className="flex items-center justify-between text-sm font-medium text-teal-700">
+            <span>Promo: {promoDescription ?? 'Code applied'}</span>
+            <span>−£{formatPrice(promoDiscountPence)}</span>
           </div>
         )}
 

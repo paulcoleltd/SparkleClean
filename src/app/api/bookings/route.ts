@@ -3,6 +3,7 @@ import { CreateBookingSchema, FREQUENCY_LABELS } from '@/types/booking'
 import { createBooking, setStripeSessionId, FREQUENCY_DISCOUNTS, calculateTotal } from '@/services/bookingService'
 import { createRecurringSchedule } from '@/services/recurringService'
 import { validateReferralCode, calculateReferralDiscount, recordReferralUse } from '@/services/referralService'
+import { validatePromoCode, getPromoCodeByCode, recordPromoUse } from '@/services/promoService'
 import { checkRateLimit, rateLimitedResponse } from '@/lib/rateLimiter'
 import { stripe } from '@/lib/stripe'
 
@@ -68,7 +69,25 @@ export async function POST(req: NextRequest) {
     discountAmount  = calculateReferralDiscount(baseTotal)
   }
 
-  // 4. If recurring, create the schedule record first
+  // 4. Validate promo code (optional) — server-side, never trust client discount
+  let promoCodeId: string | undefined
+  let promoDiscount = 0
+
+  if (parsed.data.promoCode) {
+    const baseTotal = calculateTotal(parsed.data.service, parsed.data.extras, parsed.data.frequency)
+    const result    = await validatePromoCode(parsed.data.promoCode, baseTotal - discountAmount)
+    if (!result.valid) {
+      return NextResponse.json(
+        { error: { message: result.error ?? 'Invalid promo code', code: 'INVALID_PROMO_CODE', field: 'promoCode' } },
+        { status: 400 }
+      )
+    }
+    const promoRecord = await getPromoCodeByCode(parsed.data.promoCode)
+    promoCodeId  = promoRecord?.id
+    promoDiscount = result.discountPence
+  }
+
+  // 5. If recurring, create the schedule record first
   let recurringScheduleId: string | undefined
   if (parsed.data.frequency !== 'ONE_TIME') {
     try {
@@ -84,10 +103,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 5. Save booking to DB — status starts as PENDING_PAYMENT
+  // 6. Save booking to DB — status starts as PENDING_PAYMENT
   let booking
   try {
-    booking = await createBooking(parsed.data, recurringScheduleId, referralCodeId, discountAmount)
+    booking = await createBooking(parsed.data, recurringScheduleId, referralCodeId, discountAmount, promoCodeId, promoDiscount)
   } catch (err) {
     console.error('[POST /api/bookings] DB error:', err)
     return NextResponse.json(
@@ -96,7 +115,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // 6. Create Stripe Checkout session — amount is always server-calculated, never from client
+  // 7. Create Stripe Checkout session — amount is always server-calculated, never from client
   let checkoutUrl: string
   try {
     const session = await stripe.checkout.sessions.create({
@@ -132,12 +151,11 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // 7. Record referral use non-blocking (after Stripe session confirmed)
-  if (referralCodeId) {
-    void recordReferralUse(referralCodeId).catch(console.error)
-  }
+  // 8. Record referral + promo use non-blocking (after Stripe session confirmed)
+  if (referralCodeId) void recordReferralUse(referralCodeId).catch(console.error)
+  if (promoCodeId)    void recordPromoUse(promoCodeId).catch(console.error)
 
-  // 8. Return checkout URL — client will redirect there immediately
+  // 9. Return checkout URL — client will redirect there immediately
   return NextResponse.json(
     {
       data: {

@@ -25,9 +25,10 @@ export async function GET(req: NextRequest) {
     console.log('[cron/reminders] Complete —', result)
 
     return NextResponse.json({
-      ok:     true,
-      sent:   result.sent,
-      failed: result.failed,
+      ok:      true,
+      sent:    result.sent,
+      smsSent: result.smsSent,
+      failed:  result.failed,
       ...(result.errors.length ? { errors: result.errors } : {}),
     })
   } catch (err) {
