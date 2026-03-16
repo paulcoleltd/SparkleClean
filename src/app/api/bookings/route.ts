@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { CreateBookingSchema, FREQUENCY_LABELS } from '@/types/booking'
-import { createBooking, setStripeSessionId, FREQUENCY_DISCOUNTS } from '@/services/bookingService'
+import { createBooking, setStripeSessionId, FREQUENCY_DISCOUNTS, calculateTotal } from '@/services/bookingService'
 import { createRecurringSchedule } from '@/services/recurringService'
+import { validateReferralCode, calculateReferralDiscount, recordReferralUse } from '@/services/referralService'
 import { checkRateLimit, rateLimitedResponse } from '@/lib/rateLimiter'
 import { stripe } from '@/lib/stripe'
 
@@ -50,11 +51,27 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // 3. If recurring, create the schedule record first
+  // 3. Validate referral code (optional) — server-side only, never trust client total
+  let referralCodeId: string | undefined
+  let discountAmount = 0
+
+  if (parsed.data.referralCode) {
+    const refCode = await validateReferralCode(parsed.data.referralCode)
+    if (!refCode) {
+      return NextResponse.json(
+        { error: { message: 'Invalid referral code', code: 'INVALID_REFERRAL_CODE', field: 'referralCode' } },
+        { status: 400 }
+      )
+    }
+    referralCodeId = refCode.id
+    const baseTotal = calculateTotal(parsed.data.service, parsed.data.extras, parsed.data.frequency)
+    discountAmount  = calculateReferralDiscount(baseTotal)
+  }
+
+  // 4. If recurring, create the schedule record first
   let recurringScheduleId: string | undefined
   if (parsed.data.frequency !== 'ONE_TIME') {
     try {
-      const { calculateTotal } = await import('@/services/bookingService')
       const baseTotal  = calculateTotal(parsed.data.service, parsed.data.extras, parsed.data.frequency)
       const schedule   = await createRecurringSchedule(parsed.data, baseTotal)
       recurringScheduleId = schedule.id
@@ -67,10 +84,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 4. Save booking to DB — status starts as PENDING_PAYMENT
+  // 5. Save booking to DB — status starts as PENDING_PAYMENT
   let booking
   try {
-    booking = await createBooking(parsed.data, recurringScheduleId)
+    booking = await createBooking(parsed.data, recurringScheduleId, referralCodeId, discountAmount)
   } catch (err) {
     console.error('[POST /api/bookings] DB error:', err)
     return NextResponse.json(
@@ -79,7 +96,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // 5. Create Stripe Checkout session — amount is always server-calculated, never from client
+  // 6. Create Stripe Checkout session — amount is always server-calculated, never from client
   let checkoutUrl: string
   try {
     const session = await stripe.checkout.sessions.create({
@@ -115,7 +132,12 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // 6. Return checkout URL — client will redirect there immediately
+  // 7. Record referral use non-blocking (after Stripe session confirmed)
+  if (referralCodeId) {
+    void recordReferralUse(referralCodeId).catch(console.error)
+  }
+
+  // 8. Return checkout URL — client will redirect there immediately
   return NextResponse.json(
     {
       data: {
