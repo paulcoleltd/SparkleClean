@@ -28,7 +28,7 @@ async function main() {
   const customer = await prisma.customer.upsert({
     where:  { email: 'customer@sparkleclean.com' },
     update: {},
-    create: { email: 'customer@sparkleclean.com', passwordHash: customerHash, name: 'Test Customer', phone: '+44 7700 900000' },
+    create: { email: 'customer@sparkleclean.com', passwordHash: customerHash, name: 'Test Customer' },
   })
   console.log(`✓ Customer  : ${customer.email}  (password = Customer123!)`)
 }
