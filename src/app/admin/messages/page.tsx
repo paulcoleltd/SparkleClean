@@ -4,6 +4,7 @@ import { getMessages } from '@/services/contactService'
 import { formatDate } from '@/lib/utils'
 import Link from 'next/link'
 import MarkReadButton from './MarkReadButton'
+import ReplyButton from './ReplyButton'
 
 export const metadata = { title: 'Messages — SparkleClean Admin' }
 
@@ -94,12 +95,11 @@ export default async function AdminMessagesPage({
 
               {/* Actions */}
               <div className="shrink-0 flex flex-col gap-2 items-end">
-                <a
-                  href={`mailto:${m.email}?subject=Re: ${encodeURIComponent(m.subject)}`}
-                  className="px-3 py-1 text-xs rounded-lg bg-brand-500 text-white hover:bg-brand-600 font-medium transition-colors"
-                >
-                  Reply
-                </a>
+                <ReplyButton
+                  messageId={m.id}
+                  toEmail={m.email}
+                  subject={m.subject}
+                />
                 {!m.read && <MarkReadButton messageId={m.id} />}
               </div>
             </div>
