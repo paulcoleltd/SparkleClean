@@ -20,7 +20,7 @@ export default async function AvailabilityPage() {
           Set the days and times you are available to work. Admin uses this to assign you bookings.
         </p>
       </div>
-      <AvailabilityEditor initial={availability} cleanerId={session.user.id!} dayNames={DAY_NAMES} />
+      <AvailabilityEditor initial={availability} dayNames={DAY_NAMES} />
     </div>
   )
 }

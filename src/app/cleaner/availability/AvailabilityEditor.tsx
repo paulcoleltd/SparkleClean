@@ -13,12 +13,10 @@ interface Row { dayOfWeek: number; timeSlots: string[] }
 
 export default function AvailabilityEditor({
   initial,
-  cleanerId,
   dayNames,
 }: {
-  initial:   Row[]
-  cleanerId: string
-  dayNames:  string[]
+  initial:  Row[]
+  dayNames: string[]
 }) {
   const [schedule, setSchedule] = useState<Row[]>(initial)
   const [saving,   setSaving]   = useState(false)
@@ -37,7 +35,7 @@ export default function AvailabilityEditor({
   async function save() {
     setSaving(true)
     setError(null)
-    const res = await fetch(`/api/admin/cleaners/${cleanerId}/availability`, {
+    const res = await fetch('/api/cleaner/availability', {
       method:  'PUT',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ schedule }),
