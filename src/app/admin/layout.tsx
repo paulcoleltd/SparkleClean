@@ -39,7 +39,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </div>
 
           <div className="flex items-center gap-4 text-sm">
-            <span className="text-gray-500">{session.user.email}</span>
+            <Link href="/admin/profile" className="text-gray-500 hover:text-gray-900 transition-colors">{session.user.email}</Link>
             <form action={handleSignOut}>
               <button
                 type="submit"
