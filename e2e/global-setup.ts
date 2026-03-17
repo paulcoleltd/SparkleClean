@@ -1,18 +1,23 @@
 /**
  * Playwright global setup — runs once before all E2E tests.
  *
- * 1. Loads .env.test (or .env.test.local) into process.env
- * 2. Runs Prisma migrations against the test database
- * 3. Seeds the test admin account and sample data
+ * 1. Loads .env.local (Supabase credentials) into process.env
+ * 2. Seeds test accounts (admin, customer, cleaner) via Prisma → Supabase
+ * 3. Seeds sample booking SC-E2ETEST1
  *
- * Requires: docker compose up -d  (PostgreSQL on port 5433)
+ * NOTE: Uses Supabase — Docker is NOT required.
  */
 
-import { execSync } from 'child_process'
 import path from 'path'
 import fs from 'fs'
 
-function loadEnvFile(filePath: string) {
+/**
+ * Load an env file into process.env.
+ * @param force  When true, overrides values already in process.env (used for
+ *               .env.local so Supabase DATABASE_URL wins over any Docker URL
+ *               that Playwright's config may have loaded from .env.test).
+ */
+function loadEnvFile(filePath: string, force = false) {
   if (!fs.existsSync(filePath)) return
   const content = fs.readFileSync(filePath, 'utf-8')
   for (const line of content.split('\n')) {
@@ -23,33 +28,24 @@ function loadEnvFile(filePath: string) {
     const key   = trimmed.slice(0, eqIdx).trim()
     const raw   = trimmed.slice(eqIdx + 1).trim()
     const value = raw.startsWith('"') && raw.endsWith('"') ? raw.slice(1, -1) : raw
-    // Never overwrite values already set (e.g. from CI environment)
-    if (!(key in process.env)) process.env[key] = value
+    if (force || !(key in process.env)) process.env[key] = value
   }
 }
 
 export default async function globalSetup() {
   const root = path.resolve(__dirname, '..')
 
-  // Load .env.test, then allow .env.test.local to override
-  loadEnvFile(path.join(root, '.env.test'))
-  loadEnvFile(path.join(root, '.env.test.local'))
+  // Force-load .env.local first so Supabase DATABASE_URL & AUTH_SECRET win
+  // over any Docker localhost:5433 URL that Playwright's own config may have
+  // pre-loaded from .env.test into process.env.
+  loadEnvFile(path.join(root, '.env.local'),      true)   // force — Supabase creds
+  loadEnvFile(path.join(root, '.env.test.local'), true)   // force — test overrides
+  loadEnvFile(path.join(root, '.env.test'))               // soft — Docker fallback (ignored)
 
-  console.log('\n🛠  Running Prisma migrations on test database…')
-  try {
-    execSync('npx prisma migrate deploy', {
-      cwd:   root,
-      env:   process.env,
-      stdio: 'inherit',
-    })
-  } catch (err) {
-    console.error('❌ Prisma migration failed. Is Docker running? (docker compose up -d)')
-    throw err
-  }
-
-  console.log('🌱 Seeding test data…')
+  console.log('\n🌱 Seeding test data into Supabase…')
   const { PrismaClient } = await import('@prisma/client')
-  const bcrypt = await import('bcryptjs')
+  const bcryptModule = await import('bcryptjs')
+  const bcrypt = bcryptModule.default ?? bcryptModule
 
   const prisma = new PrismaClient({
     datasources: { db: { url: process.env.DATABASE_URL } },
@@ -57,7 +53,7 @@ export default async function globalSetup() {
 
   try {
     // ── Admin account ─────────────────────────────────────────────────────────
-    const adminPassword = process.env.ADMIN_SEED_PASSWORD ?? 'TestAdmin123!'
+    const adminPassword = process.env.ADMIN_SEED_PASSWORD ?? 'MiahAdekoya123!!!!'
     const adminEmail    = process.env.ADMIN_SEED_EMAIL    ?? 'admin@sparkleclean.com'
     const adminHash     = await bcrypt.hash(adminPassword, 10)
 
@@ -80,6 +76,20 @@ export default async function globalSetup() {
       },
     })
     console.log('   ✓ Customer: customer@example.com / Customer123!')
+
+    // ── Test cleaner ──────────────────────────────────────────────────────────
+    const cleanerHash = await bcrypt.hash('Cleaner123!', 10)
+    await prisma.cleaner.upsert({
+      where:  { email: 'cleaner@sparkleclean.com' },
+      update: { passwordHash: cleanerHash, active: true },
+      create: {
+        email:        'cleaner@sparkleclean.com',
+        passwordHash: cleanerHash,
+        name:         'Test Cleaner',
+        active:       true,
+      },
+    })
+    console.log('   ✓ Cleaner: cleaner@sparkleclean.com / Cleaner123!')
 
     // ── Sample bookings for calendar / dashboard tests ────────────────────────
     const { randomUUID } = await import('crypto')

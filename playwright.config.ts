@@ -2,8 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 import path from 'path'
 import fs from 'fs'
 
-// ─── Load .env.test (then .env.test.local overrides) into process.env ─────────
-// This makes env vars available to globalSetup, auth.setup.ts, and all specs.
+// ─── Load env files into process.env ──────────────────────────────────────────
 function loadEnvFile(filePath: string) {
   if (!fs.existsSync(filePath)) return
   const content = fs.readFileSync(filePath, 'utf-8')
@@ -22,47 +21,76 @@ function loadEnvFile(filePath: string) {
 const root = path.resolve(__dirname)
 loadEnvFile(path.join(root, '.env.test'))
 loadEnvFile(path.join(root, '.env.test.local'))
+loadEnvFile(path.join(root, '.env.local'))   // fallback: Supabase credentials
 
-const ADMIN_AUTH_FILE = path.join(root, '.auth/admin.json')
+const ADMIN_AUTH_FILE    = path.join(root, '.auth/admin.json')
+const CUSTOMER_AUTH_FILE = path.join(root, '.auth/customer.json')
+const CLEANER_AUTH_FILE  = path.join(root, '.auth/cleaner.json')
 
 export default defineConfig({
   testDir:       './e2e',
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly:    !!process.env.CI,
-  retries:       process.env.CI ? 2 : 0,
-  workers:       process.env.CI ? 1 : undefined,
-  reporter:      'html',
+  retries:       1,
+  workers:       1,
+  reporter: [
+    ['html', { outputFolder: 'playwright-report', open: 'never' }],
+    ['json', { outputFile:   'playwright-report/results.json'  }],
+    ['list'],
+  ],
 
   globalSetup:    './e2e/global-setup.ts',
   globalTeardown: './e2e/global-teardown.ts',
 
   use: {
     baseURL:    process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
-    trace:      'on-first-retry',
-    screenshot: 'only-on-failure',
+    trace:      'retain-on-failure',
+    screenshot: 'on',              // capture screenshot for every test
+    video:      'retain-on-failure',
   },
 
   projects: [
-    // ── Auth setup must run before any authenticated project ─────────────────
+    // ── 0. Auth setup — saves 3 session files ────────────────────────────────
     {
       name:      'setup',
       testMatch: /auth\.setup\.ts/,
       use:       { ...devices['Desktop Chrome'] },
     },
 
-    // ── Unauthenticated tests ────────────────────────────────────────────────
+    // ── 1. Customer journey (unauthenticated + public APIs) ──────────────────
+    {
+      name:         'customer-journey',
+      testMatch:    /01-customer-journey\.spec\.ts/,
+      use:          { ...devices['Desktop Chrome'] },
+      dependencies: ['setup'],
+    },
+
+    // ── 2. Admin journey (authenticated as admin) ────────────────────────────
+    {
+      name:         'admin-journey',
+      testMatch:    /02-admin-journey\.spec\.ts/,
+      use:          { ...devices['Desktop Chrome'], storageState: ADMIN_AUTH_FILE },
+      dependencies: ['setup'],
+    },
+
+    // ── 3. Cleaner journey (authenticated as cleaner) ────────────────────────
+    {
+      name:         'cleaner-journey',
+      testMatch:    /03-cleaner-journey\.spec\.ts/,
+      use:          { ...devices['Desktop Chrome'], storageState: CLEANER_AUTH_FILE },
+      dependencies: ['setup'],
+    },
+
+    // ── Legacy specs (kept for backward compatibility) ───────────────────────
     {
       name:       'chromium',
       use:        { ...devices['Desktop Chrome'] },
-      testIgnore: [/admin-authenticated/, /calendar\.spec/],
+      testIgnore: [
+        /admin-authenticated/, /calendar\.spec/,
+        /auth\.setup/,
+        /01-customer-journey/, /02-admin-journey/, /03-cleaner-journey/,
+      ],
     },
-    {
-      name:       'mobile',
-      use:        { ...devices['iPhone 14'] },
-      testIgnore: [/admin-authenticated/, /calendar\.spec/],
-    },
-
-    // ── Admin-authenticated tests (depend on setup project) ──────────────────
     {
       name:         'admin-authenticated',
       use:          { ...devices['Desktop Chrome'], storageState: ADMIN_AUTH_FILE },
@@ -71,12 +99,10 @@ export default defineConfig({
     },
   ],
 
-  webServer: process.env.CI
-    ? undefined
-    : {
-        command:             'pnpm dev',
-        url:                 'http://localhost:3000',
-        reuseExistingServer: true,
-        timeout:             120_000,
-      },
+  webServer: {
+    command:             'npm run dev',
+    url:                 'http://localhost:3000',
+    reuseExistingServer: true,
+    timeout:             120_000,
+  },
 })

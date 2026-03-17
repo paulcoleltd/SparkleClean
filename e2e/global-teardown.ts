@@ -6,7 +6,7 @@
 import path from 'path'
 import fs from 'fs'
 
-function loadEnvFile(filePath: string) {
+function loadEnvFile(filePath: string, force = false) {
   if (!fs.existsSync(filePath)) return
   const content = fs.readFileSync(filePath, 'utf-8')
   for (const line of content.split('\n')) {
@@ -17,14 +17,16 @@ function loadEnvFile(filePath: string) {
     const key   = trimmed.slice(0, eqIdx).trim()
     const raw   = trimmed.slice(eqIdx + 1).trim()
     const value = raw.startsWith('"') && raw.endsWith('"') ? raw.slice(1, -1) : raw
-    if (!(key in process.env)) process.env[key] = value
+    if (force || !(key in process.env)) process.env[key] = value
   }
 }
 
 export default async function globalTeardown() {
   const root = path.resolve(__dirname, '..')
-  loadEnvFile(path.join(root, '.env.test'))
-  loadEnvFile(path.join(root, '.env.test.local'))
+  // Force-load .env.local so Supabase URL wins over Docker localhost:5433
+  loadEnvFile(path.join(root, '.env.local'),      true)   // force — Supabase creds
+  loadEnvFile(path.join(root, '.env.test.local'), true)   // force — test overrides
+  loadEnvFile(path.join(root, '.env.test'))               // soft — Docker fallback (ignored)
 
   const { PrismaClient } = await import('@prisma/client')
   const prisma = new PrismaClient({
