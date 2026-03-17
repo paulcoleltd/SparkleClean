@@ -34,5 +34,7 @@ next-env.d.ts
 # Local test env override
 .env.test.local
 
-# Claude Code session data
+# Claude Code session data (exclude sessions/cache but keep project config)
 .claude/
+!.claude/settings.json
+!.claude/hooks/
