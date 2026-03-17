@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { auth } from '../../../../auth'
+import { redirect } from 'next/navigation'
 import { getBookingsByEmail, canCustomerCancel } from '@/services/customerService'
 import { formatDate, formatPrice } from '@/lib/utils'
 import { SERVICE_LABELS } from '@/types/booking'
@@ -33,7 +34,8 @@ export default async function AccountBookingsPage({
   searchParams: Promise<{ rescheduled?: string; cancelled?: string }>
 }) {
   const session  = await auth()
-  const email    = session!.user.email
+  if (!session?.user) redirect('/account/login')
+  const email    = session.user.email
   const bookings = await getBookingsByEmail(email)
   const { rescheduled, cancelled } = await searchParams
 
